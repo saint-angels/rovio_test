@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Assets.Scripts.Presentation.Entities;
 using DG.Tweening;
 using UnityEngine;
@@ -37,6 +38,11 @@ namespace Assets.Scripts.Presentation.Levels
 
 			audio = GameObject.Find("Audio").GetComponent<AudioComponent>();
 		}
+
+        public List<EntityComponent> GetCharacters(EntityFaction faction)
+        {
+            return LevelData.Entities.Where(p => p.Type == EntityType.Character && p.Faction == faction).ToList();
+        }
 
 		public void LoadLevel(string levelName)
 		{
@@ -77,17 +83,17 @@ namespace Assets.Scripts.Presentation.Levels
 					{
 						case 'e':
 							entitySprite = entitySprites[UnityEngine.Random.Range(0, 5)];
-							InstantiateEntity(x, y, entitySprite, EntityType.Enemy);
+							InstantiateEntity(x, y, entitySprite, EntityType.Character, EntityFaction.Enemy);
 							break;
 
 						case 'p':
 							entitySprite = entitySprites[UnityEngine.Random.Range(5, 10)];
-							InstantiateEntity(x, y, entitySprite, EntityType.Player);
+							InstantiateEntity(x, y, entitySprite, EntityType.Character, EntityFaction.Player);
 							break;
 
 						case '#':
 							entitySprite = tileSprites[49];
-							InstantiateEntity(x, y, entitySprite, EntityType.Obstacle);
+							InstantiateEntity(x, y, entitySprite, EntityType.Obstacle, EntityFaction.Neutral);
 							break;
 					}
 				}
@@ -120,11 +126,11 @@ namespace Assets.Scripts.Presentation.Levels
 			LevelData.Tiles[x, y] = tile.GetComponent<LevelTileComponent>();
 		}
 
-		private void InstantiateEntity(int x, int y, Sprite sprite, EntityType type)
+		private void InstantiateEntity(int x, int y, Sprite sprite, EntityType type, EntityFaction faction)
 		{
 			var entity = GameObject.Instantiate(entityPrefab, Vector3.zero, Quaternion.identity, entitiesContainer).GetComponent<EntityComponent>();
-			entity.name = entityPrefab.name;
-			entity.Initialize(x, y, sprite, type);
+            entity.name = type.ToString();
+            entity.Initialize(x, y, sprite, type, faction);
 			LevelData.Entities.Add(entity);
 		}
 

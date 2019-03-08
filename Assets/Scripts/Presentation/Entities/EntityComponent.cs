@@ -15,7 +15,8 @@ namespace Assets.Scripts.Presentation.Entities
 		public GameObject HealthBar;
 
 		public EntityType Type { get; private set; }
-		public Vector2Int GridPosition { get; private set; }
+        public EntityFaction Faction { get; private set; }
+        public Vector2Int GridPosition { get; private set; }
 
 		private AudioComponent audio;
 
@@ -24,17 +25,17 @@ namespace Assets.Scripts.Presentation.Entities
 			audio = GameObject.Find("Audio").GetComponent<AudioComponent>();
 		}
 
-		public void Initialize(int x, int y, Sprite sprite, EntityType type)
+		public void Initialize(int x, int y, Sprite sprite, EntityType type, EntityFaction faction)
 		{
 			GridPosition = new Vector2Int(x, y);
 			Renderer.sprite = sprite;
 			Type = type;
+            Faction = faction;
 
 			Renderer.sortingOrder = LevelGrid.GetSortingOrder(x, y);
 			transform.position = LevelGrid.ToWorldCoordinates(x, y);
 
-			var isCharacterEntity = type == EntityType.Enemy || type == EntityType.Player;
-			if (isCharacterEntity)
+			if (type == EntityType.Character)
 			{
 				HealthBarContainer.SetActive(true);
 				HealthBar.SetActive(true);
