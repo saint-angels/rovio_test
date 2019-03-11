@@ -1,12 +1,16 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using Assets.Scripts.Presentation.Levels;
 using DG.Tweening;
 using UnityEngine;
 
 namespace Assets.Scripts.Presentation.Entities
 {
+    [SelectionBase]
 	public class EntityComponent : MonoBehaviour
 	{
+        public event Action<EntityComponent> OnDestroyed = (e) => { };
+
 		public SpriteRenderer Renderer;
 		public GameObject SlashPrefab;
 		public GameObject Selection;
@@ -136,7 +140,7 @@ namespace Assets.Scripts.Presentation.Entities
 
 		public void PlayDeathAnimation()
 		{
-			transform.DOMoveX(Random.Range(-3f, 3f), 4f).SetEase(Ease.OutQuart);
+			transform.DOMoveX(UnityEngine.Random.Range(-3f, 3f), 4f).SetEase(Ease.OutQuart);
 			transform.GetChild(0).DOLocalRotate(new Vector3(0, 0, 180f), 2f);
 
 			transform.DOMoveY(transform.position.y + 1f, 0.5f)
@@ -146,7 +150,8 @@ namespace Assets.Scripts.Presentation.Entities
 					transform.DOMoveY(-10, 5f).SetEase(Ease.OutQuint).OnComplete(() =>
 					{
 						gameObject.SetActive(false);
-					});
+                        OnDestroyed(this);
+                    });
 				});
 
 			audio.PlayDeath();
@@ -157,7 +162,7 @@ namespace Assets.Scripts.Presentation.Entities
 			var slash = GameObject.Instantiate(SlashPrefab, Vector3.zero, Quaternion.identity);
 			slash.name = SlashPrefab.name;
 			slash.transform.position = LevelGrid.ToWorldCoordinates(x, y);
-			slash.transform.GetChild(0).rotation = Quaternion.Euler(0, 0, Random.Range(0, 360));
+			slash.transform.GetChild(0).rotation = Quaternion.Euler(0, 0, UnityEngine.Random.Range(0, 360));
 			GameObject.Destroy(slash, 1f);
 		}
 	}

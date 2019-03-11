@@ -16,9 +16,9 @@ namespace Assets.Scripts.Presentation.Levels
 		public static Vector2Int ToGridCoordinates(float worldX, float worldY)
 		{
 			worldY -= TileSize.y;
-			var tileX = (worldX / TileSize.x - worldY / TileSize.y) / 2f;
-			var tileY = (-worldX / TileSize.x - worldY / TileSize.y) / 2f;
-			return new Vector2Int(Mathf.RoundToInt(tileX), Mathf.RoundToInt(tileY));
+			float tileX = (worldX / TileSize.x - worldY / TileSize.y) / 2f;
+            float tileY = (-worldX / TileSize.x - worldY / TileSize.y) / 2f;
+			return new Vector2Int(Mathf.FloorToInt(tileX), Mathf.FloorToInt(tileY));
 		}
 
 		public static int GetSortingOrder(int x, int y)

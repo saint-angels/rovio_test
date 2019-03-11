@@ -7,9 +7,11 @@ using UnityEngine;
 
 namespace Assets.Scripts.Presentation.Levels
 {
-	public class LevelService
-	{
-		public LevelData LevelData;
+    public class LevelService
+    {
+        public LevelData LevelData;
+
+        public Vector2Int GridSize { get; private set; }
 
 		private Sprite[] tileSprites;
 		private GameObject tilePrefab;
@@ -44,19 +46,41 @@ namespace Assets.Scripts.Presentation.Levels
             return LevelData.Entities.Where(p => p.Type == EntityType.Character && p.Faction == faction).ToList();
         }
 
+        public List<EntityComponent> GetEntities()
+        {
+            return LevelData.Entities;
+        }
+
+        //There could be only 1 entity at each tile at a time.
+        public EntityComponent GetEntityAtPosition(int x, int y)
+        {
+            bool outOfGridBounds = x >= GridSize.x || x < 0 || y >= GridSize.y || y < 0;
+            if (outOfGridBounds)
+            {
+                return null;
+
+            }
+            else
+            {
+                return LevelData.TilesEntities[x, y];
+            }
+        }
+
 		public void LoadLevel(string levelName)
 		{
 			var levelText = Resources.Load<TextAsset>($"Levels/{levelName}").text;
 			var rows = levelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
 			var width = int.Parse(rows[0]);
 			var height = int.Parse(rows[1]);
+            GridSize = new Vector2Int(width, height);
 
-			LevelData = new LevelData
+            LevelData = new LevelData
 			{
 				Width = width,
 				Height = height,
 				Tiles = new LevelTileComponent[width, height],
-				Entities = new List<EntityComponent>()
+				Entities = new List<EntityComponent>(),
+                TilesEntities = new EntityComponent[width, height]
 			};
 
 			// Ground
@@ -132,11 +156,12 @@ namespace Assets.Scripts.Presentation.Levels
             entity.name = type.ToString();
             entity.Initialize(x, y, sprite, type, faction);
 			LevelData.Entities.Add(entity);
+            LevelData.TilesEntities[x, y] = entity;
 		}
 
-		public void ShowBreadCrumb(int x, int y, bool state, float delay = 0)
+		public void SetBreadCrumbVisible(int x, int y, bool isVisible, float delay = 0)
 		{
-			LevelData.Tiles[x, y].ShowBreadCrumb(state, delay);
+			LevelData.Tiles[x, y].SetBreadCrumbVisible(isVisible, delay);
 		}
 
 		public void HideAllBreadCrumbs()
@@ -145,7 +170,7 @@ namespace Assets.Scripts.Presentation.Levels
 			{
 				for (int x = 0; x < LevelData.Width; x++)
 				{
-					LevelData.Tiles[x, y].ShowBreadCrumb(false);
+					LevelData.Tiles[x, y].SetBreadCrumbVisible(false);
 				}
 			}
 		}
