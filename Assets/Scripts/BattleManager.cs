@@ -29,6 +29,7 @@ namespace Assets.Scripts
 			levelService = new LevelService();
 			levelService.LoadLevel("Level1");
 
+            //Init graph
             var graph = AstarPath.active.data.pointGraph;
             graph.limits = new Vector3(LevelGrid.TileSize.x, LevelGrid.TileSize.y);
             graph.Scan();
@@ -66,35 +67,38 @@ namespace Assets.Scripts
             attackingPlayerCharacters.AddRange(movablePlayerCharacters);
         }
 
+        private void SelectNeighbours(GraphNode node, int currentDepth, int maxDepth)
+        {
+            if (currentDepth <= maxDepth)
+            {
+                node.GetConnections((neighbour) =>
+                {
+                    if (neighbour.Walkable)
+                    {
+                        Vector3 neighbourWorldPosition = (Vector3)neighbour.position;
+                        Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinates(neighbourWorldPosition.x, neighbourWorldPosition.y);
+                        levelService.SetBreadCrumbVisible(neigbourGridCoordinates.x, neigbourGridCoordinates.y, true, .1f * currentDepth);
+                        SelectNeighbours(neighbour, currentDepth + 1, maxDepth);
+                    }
+                });
+
+            }
+        }
+
         private void SelectPlayerCharacter(EntityComponent selectedCharacter)
         {
             SelectCharacter(selectedCharacter);
 
-            int minX = Mathf.Max(selectedCharacter.GridPosition.x - walkDistance, 0);
-            int maxX = Mathf.Min(selectedCharacter.GridPosition.x + walkDistance, levelService.GridSize.x);
-            int minY = Mathf.Max(selectedCharacter.GridPosition.y - walkDistance, 0);
-            int maxY = Mathf.Min(selectedCharacter.GridPosition.y + walkDistance, levelService.GridSize.y);
+            Vector2 worldPositionCurrent = LevelGrid.ToWorldCoordinates(selectedCharacter.GridPosition.x, selectedCharacter.GridPosition.y);
+            GraphNode selectedCharacterNode =  AstarPath.active.data.pointGraph.GetNearest(worldPositionCurrent).node;
 
-            levelService.HideAllBreadCrumbs();
-
-            for (int x = minX; x < maxX; x++)
-            {
-                for (int y = minY; y < maxY; y++)
-                {
-                    int characterOffsetX = Mathf.Abs(x - selectedCharacter.GridPosition.x);
-                    int characterOffsetY = Mathf.Abs(y - selectedCharacter.GridPosition.y);
-                    if (characterOffsetX + characterOffsetY <= walkDistance)
-                    {
-                        levelService.SetBreadCrumbVisible(x, y, true, .1f*(characterOffsetX + characterOffsetY));
-                    }
-                }
-            }
+            SelectNeighbours(selectedCharacterNode, 1, walkDistance);
         }
 
         private void MoveCharacter(EntityComponent character, Vector2Int coordinates)
         {
-            Vector2 worldPositionTarget = LevelGrid.ToWorldCoordinates(coordinates.x, coordinates.y);
             Vector2 worldPositionCurrent = LevelGrid.ToWorldCoordinates(character.GridPosition.x, character.GridPosition.y);
+            Vector2 worldPositionTarget = LevelGrid.ToWorldCoordinates(coordinates.x, coordinates.y);
 
             var path = ABPath.Construct(worldPositionCurrent, worldPositionTarget, null);
             AstarPath.StartPath(path);
