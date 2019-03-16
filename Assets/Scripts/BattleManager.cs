@@ -57,7 +57,7 @@ namespace Assets.Scripts
             inputSystem.OnCharacterClicked += OnCharacterClicked;
             inputSystem.OnEmptyTileClicked += OnEmptyTileClicked;
 
-            SetState(TurnState.USER_IDLE);
+            StartTurn();
         }
 
         private void SetState(TurnState newTurnState)
@@ -91,6 +91,8 @@ namespace Assets.Scripts
             movablePlayerCharacters.Clear();
             movablePlayerCharacters.AddRange(levelService.GetCharacters(EntityFaction.Player));
             attackingPlayerCharacters.AddRange(movablePlayerCharacters);
+
+            SetState(TurnState.USER_IDLE);
         }
 
         private void OnCharacterClicked(EntityComponent character)
@@ -118,7 +120,8 @@ namespace Assets.Scripts
                 case TurnState.USER_IDLE:
                     break;
                 case TurnState.USER_CHAR_SELECTED:
-                    if (characterAvailableDestinationsCache.Contains(gridPosition))
+                    bool characterCanMove = movablePlayerCharacters.Contains(selectedCharacter);
+                    if (characterAvailableDestinationsCache.Contains(gridPosition) && characterCanMove)
                     {
                         MoveCharacter(selectedCharacter, gridPosition);
                     }
@@ -142,6 +145,8 @@ namespace Assets.Scripts
                 return;
             }
 
+            levelService.HideAllBreadCrumbs();
+            movablePlayerCharacters.Remove(character);
             Vector2Int previousPosition = character.GridPosition;
 
             //TODO: Lock the input for duration of the movment?
@@ -174,23 +179,27 @@ namespace Assets.Scripts
         {
             this.selectedCharacter = selectedCharacter;
 
-            //Show walk breadcrumbs & cache possible destinations
-            characterAvailableDestinationsCache.Clear();
-            levelService.HideAllBreadCrumbs();
-            gridNavigator.ApplyActionOnNeighbours(selectedCharacter.GridPosition, walkDistance,
-                (depth, gridPosition) =>
-                {
-                    levelService.SetBreadCrumbVisible(gridPosition.x, gridPosition.y, true, .1f * depth);
-                    characterAvailableDestinationsCache.Add(gridPosition);
-                });
-
             //Show HUD selection
             foreach (var entity in levelService.GetEntities())
             {
                 entity.ShowSelection(entity == selectedCharacter);
             }
-
             SetState(TurnState.USER_CHAR_SELECTED);
+
+            bool characterCanMove = movablePlayerCharacters.Contains(selectedCharacter);
+            if (characterCanMove)
+            {
+                //Show walk breadcrumbs & cache possible destinations
+                characterAvailableDestinationsCache.Clear();
+                levelService.HideAllBreadCrumbs();
+                gridNavigator.ApplyActionOnNeighbours(selectedCharacter.GridPosition, walkDistance,
+                    (depth, gridPosition) =>
+                    {
+                        levelService.SetBreadCrumbVisible(gridPosition.x, gridPosition.y, true, .1f * depth);
+                        characterAvailableDestinationsCache.Add(gridPosition);
+                    });
+
+            }
         }
 
         private void DeselectCharacter()
