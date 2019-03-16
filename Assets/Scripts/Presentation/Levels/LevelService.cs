@@ -51,18 +51,22 @@ namespace Assets.Scripts.Presentation.Levels
             return LevelData.Entities;
         }
 
+        public bool IsPointOnLevelGrid(int x, int y)
+        {
+            bool outOfGridBounds = x >= GridSize.x || x < 0 || y >= GridSize.y || y < 0;
+            return outOfGridBounds == false;
+        }
+
         //There could be only 1 entity at each tile at a time.
         public EntityComponent GetEntityAtPosition(int x, int y)
         {
-            bool outOfGridBounds = x >= GridSize.x || x < 0 || y >= GridSize.y || y < 0;
-            if (outOfGridBounds)
+            if (IsPointOnLevelGrid(x, y))
             {
-                return null;
-
+                return LevelData.TilesEntities[x, y];
             }
             else
             {
-                return LevelData.TilesEntities[x, y];
+                return null;
             }
         }
 
