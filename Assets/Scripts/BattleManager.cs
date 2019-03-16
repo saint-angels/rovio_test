@@ -10,6 +10,8 @@ namespace Assets.Scripts
 {
 	public class BattleManager : MonoBehaviour
 	{
+        [SerializeField] GridNavigator gridNavigator;
+
 		private LevelService levelService;
 		private UiComponent ui;
 
@@ -23,33 +25,19 @@ namespace Assets.Scripts
         private List<EntityComponent> movablePlayerCharacters = new List<EntityComponent>();
         private List<EntityComponent> attackingPlayerCharacters = new List<EntityComponent>();
 
-        private void Awake()
+        private void Start()
 		{
 			// Load the level
 			levelService = new LevelService();
 			levelService.LoadLevel("Level1");
-
-            //Init graph
-            var graph = AstarPath.active.data.pointGraph;
-            graph.limits = new Vector3(LevelGrid.TileSize.x, LevelGrid.TileSize.y);
-            graph.Scan();
-
-            foreach (var node in graph.nodes)
-            {
-                Vector3 nodeWorldPosition = (Vector3)node.position;
-                Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinates(nodeWorldPosition.x, nodeWorldPosition.y);
-                EntityComponent entityAtNode = levelService.GetEntityAtPosition(nodeGridPosition.x, nodeGridPosition.y);
-                if (entityAtNode != null && entityAtNode.Type == EntityType.Obstacle)
-                {
-                    node.Walkable = false;
-                }
-            }
 
             // Grab all enemies
             //TODO: Remove enemies from list after death
             enemies = levelService.GetCharacters(EntityFaction.Enemy);
 
 			ui = GameObject.Find("Canvas").GetComponent<UiComponent>();
+
+            gridNavigator.Init(levelService);
         }
 
         private void StartTurn()
@@ -67,78 +55,50 @@ namespace Assets.Scripts
             attackingPlayerCharacters.AddRange(movablePlayerCharacters);
         }
 
-        private void SelectNeighbours(GraphNode node, int currentDepth, int maxDepth)
-        {
-            if (currentDepth <= maxDepth)
-            {
-                node.GetConnections((neighbour) =>
-                {
-                    if (neighbour.Walkable)
-                    {
-                        Vector3 neighbourWorldPosition = (Vector3)neighbour.position;
-                        Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinates(neighbourWorldPosition.x, neighbourWorldPosition.y);
-                        levelService.SetBreadCrumbVisible(neigbourGridCoordinates.x, neigbourGridCoordinates.y, true, .1f * currentDepth);
-                        SelectNeighbours(neighbour, currentDepth + 1, maxDepth);
-                    }
-                });
-
-            }
-        }
-
         private void SelectPlayerCharacter(EntityComponent selectedCharacter)
         {
             SelectCharacter(selectedCharacter);
 
             Vector2 worldPositionCurrent = LevelGrid.ToWorldCoordinates(selectedCharacter.GridPosition.x, selectedCharacter.GridPosition.y);
-            GraphNode selectedCharacterNode =  AstarPath.active.data.pointGraph.GetNearest(worldPositionCurrent).node;
-
-            SelectNeighbours(selectedCharacterNode, 1, walkDistance);
+            gridNavigator.ApplyActionOnNeighbours(worldPositionCurrent, walkDistance,
+                (depth, gridPosition) =>
+                {
+                    levelService.SetBreadCrumbVisible(gridPosition.x, gridPosition.y, true, .1f * depth);
+                });
         }
 
-        private void MoveCharacter(EntityComponent character, Vector2Int coordinates)
+        private void MoveCharacter(EntityComponent character, Vector2Int targetPosition)
         {
-            Vector2 worldPositionCurrent = LevelGrid.ToWorldCoordinates(character.GridPosition.x, character.GridPosition.y);
-            Vector2 worldPositionTarget = LevelGrid.ToWorldCoordinates(coordinates.x, coordinates.y);
-
-            var path = ABPath.Construct(worldPositionCurrent, worldPositionTarget, null);
-            AstarPath.StartPath(path);
-            path.BlockUntilCalculated();
-
-            if (path.error)
+            List<Vector2Int> path = gridNavigator.GetPath(character.GridPosition, targetPosition);
+            if (path == null)
             {
-                Debug.LogError("No path was found");
                 return;
             }
 
-            Vector2Int previousCoordinates = character.GridPosition;
-            for (int nodeIdx = 1; nodeIdx < path.vectorPath.Count; nodeIdx++)
+            Vector2Int previousPosition = character.GridPosition;
+
+            for (int nodeIdx = 1; nodeIdx < path.Count; nodeIdx++)
             {
                 float moveDelay = .5f * (nodeIdx - 1);
-                Vector3 nodePosition = path.vectorPath[nodeIdx];
-                Vector2Int nextNodeCoordinates = LevelGrid.ToGridCoordinates(nodePosition.x, nodePosition.y);
-                if (nextNodeCoordinates.x > previousCoordinates.x)
+                Vector2Int nextPosition = path[nodeIdx];
+                if (nextPosition.x > previousPosition.x)
                 {
                     character.Move(Direction.Right, moveDelay);
                 }
-                else if (nextNodeCoordinates.x < previousCoordinates.x)
+                else if (nextPosition.x < previousPosition.x)
                 {
                     character.Move(Direction.Left, moveDelay);
                 }
-                else if (nextNodeCoordinates.y > previousCoordinates.y)
+                else if (nextPosition.y > previousPosition.y)
                 {
                     character.Move(Direction.Down, moveDelay);
                 }
-                else if (nextNodeCoordinates.y < previousCoordinates.y)
+                else if (nextPosition.y < previousPosition.y)
                 {
                     character.Move(Direction.Up, moveDelay);
                 }
 
-                previousCoordinates = nextNodeCoordinates;
-            }
-
-            foreach (Vector3 nodePosition in path.vectorPath)
-            {
-                print(LevelGrid.ToGridCoordinates(nodePosition.x, nodePosition.y));
+                previousPosition = nextPosition;
             }
 
             SelectCharacter(null);

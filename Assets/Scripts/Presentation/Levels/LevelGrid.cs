@@ -6,7 +6,13 @@ namespace Assets.Scripts.Presentation.Levels
 	{
 		public static readonly Vector2 TileSize = new Vector2(0.5f, 0.25f);
 
-		public static Vector2 ToWorldCoordinates(int x, int y)
+        public static Vector2 ToWorldCoordinates(Vector2Int position)
+        {
+            return ToWorldCoordinates(position.x, position.y);
+        }
+
+
+        public static Vector2 ToWorldCoordinates(int x, int y)
 		{
 			var tileX = (x * TileSize.x) - (y * TileSize.x);
 			var tileY = -(x * TileSize.y) - (y * TileSize.y);

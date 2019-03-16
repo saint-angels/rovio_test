@@ -9,7 +9,7 @@ All characters are now one entity type and differentiate by faction.
 
 Things that could be improved:
 Detect entities selection not only by their tile click, but also by click on their sprite.
-
+Extract constants that impact visual feel into some settings 
 
 Try to complete this test within 2 weeks. Once completed, please write a summary of things that you are proud of, as well as things that could be improved.
 
