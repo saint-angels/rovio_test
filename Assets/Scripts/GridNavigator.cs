@@ -55,7 +55,7 @@ namespace Assets.Scripts
             }
         }
 
-        public void ApplyActionOnNeighbours(Vector2Int nodeGridPosition, int maxDepth, Action<int, Vector2Int> action)
+        public void ApplyActionOnNeighbours(Vector2Int nodeGridPosition, int maxDepth, bool onlyWalkable, Action<int, Vector2Int> action)
         {
             Vector3 nodePositionWorld = LevelGrid.ToWorldCoordinates(nodeGridPosition);
             GraphNode selectedNode = AstarPath.active.data.pointGraph.GetNearest(nodePositionWorld).node;
@@ -65,22 +65,27 @@ namespace Assets.Scripts
             }
             else
             {
-                SelectNeighbours(selectedNode, 1, maxDepth, action);
+                List<GraphNode> visitedNodes = new List<GraphNode>() { selectedNode };
+                ApplyActionOnNeighboursInternal(selectedNode, 1, maxDepth, onlyWalkable, visitedNodes, action);
             }
         }
 
-        private void SelectNeighbours(GraphNode node, int currentDepth, int maxDepth, Action<int, Vector2Int> action)
+        private void ApplyActionOnNeighboursInternal(GraphNode node, int currentDepth, int maxDepth, bool onlyWalkable, List<GraphNode> visitedNodes, Action<int, Vector2Int> action)
         {
             if (currentDepth <= maxDepth)
             {
                 node.GetConnections((neighbour) =>
                 {
-                    if (neighbour.Walkable)
+                    if (visitedNodes.Contains(neighbour) == false)
                     {
-                        Vector3 neighbourWorldPosition = (Vector3)neighbour.position;
-                        Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinates(neighbourWorldPosition.x, neighbourWorldPosition.y);
-                        action(currentDepth, neigbourGridCoordinates);
-                        SelectNeighbours(neighbour, currentDepth + 1, maxDepth, action);
+                        visitedNodes.Add(neighbour);
+                        if (onlyWalkable == false || neighbour.Walkable)
+                        {
+                            Vector3 neighbourWorldPosition = (Vector3)neighbour.position;
+                            Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinates(neighbourWorldPosition.x, neighbourWorldPosition.y);
+                            action(currentDepth, neigbourGridCoordinates);
+                            ApplyActionOnNeighboursInternal(neighbour, currentDepth + 1, maxDepth, onlyWalkable, visitedNodes, action);
+                        }
                     }
                 });
 

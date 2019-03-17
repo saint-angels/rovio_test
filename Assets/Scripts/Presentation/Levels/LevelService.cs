@@ -57,7 +57,7 @@ namespace Assets.Scripts.Presentation.Levels
             return outOfGridBounds == false;
         }
 
-        //There could be only 1 entity at each tile at a time.
+        //Note: there could be only 1 entity at each tile at a time.
         public EntityComponent GetEntityAtPosition(int x, int y)
         {
             if (IsPointOnLevelGrid(x, y))
@@ -161,6 +161,7 @@ namespace Assets.Scripts.Presentation.Levels
             entity.Initialize(x, y, sprite, type, faction);
 			LevelData.Entities.Add(entity);
             LevelData.TilesEntities[x, y] = entity;
+            entity.OnMoved += OnEntityMoved;
 		}
 
 		public void SetBreadCrumbVisible(int x, int y, bool isVisible, float delay = 0)
@@ -239,5 +240,11 @@ namespace Assets.Scripts.Presentation.Levels
 
 			audio.PlayQuake();
 		}
-	}
+
+        private void OnEntityMoved(EntityComponent entity, Vector2Int oldPosition, Vector2Int newPosition)
+        {
+            LevelData.TilesEntities[oldPosition.x, oldPosition.y] = null;
+            LevelData.TilesEntities[newPosition.x, newPosition.y] = entity;
+        }
+    }
 }

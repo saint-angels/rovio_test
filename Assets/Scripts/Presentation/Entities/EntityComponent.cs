@@ -9,6 +9,7 @@ namespace Assets.Scripts.Presentation.Entities
     [SelectionBase]
 	public class EntityComponent : MonoBehaviour
 	{
+        public event Action<EntityComponent, Vector2Int, Vector2Int> OnMoved = (entity, oldPosition, newPosition) => { };
         public event Action<EntityComponent> OnDestroyed = (e) => { };
 
 		public SpriteRenderer Renderer;
@@ -56,6 +57,8 @@ namespace Assets.Scripts.Presentation.Entities
 		{
 			yield return new WaitForSeconds(delay);
 
+            Vector2Int oldPosition = GridPosition;
+
 			switch (direction)
 			{
 				case Direction.Up:
@@ -75,10 +78,11 @@ namespace Assets.Scripts.Presentation.Entities
 					break;
 			}
 
-			var targetPosition = LevelGrid.ToWorldCoordinates(GridPosition.x, GridPosition.y);
-			transform.DOJump(targetPosition, 0.25f, 1, 0.3f).SetEase(Ease.InQuint);
+			Vector2 targetPosition = LevelGrid.ToWorldCoordinates(GridPosition.x, GridPosition.y);
+			transform.DOJump(targetPosition, 0.25f, 1, 0.2f).SetEase(Ease.InQuint);
 			Renderer.sortingOrder = LevelGrid.GetSortingOrder(GridPosition.x, GridPosition.y);
 			audio.PlayMove();
+            OnMoved(this, oldPosition, GridPosition);
 		}
 
 		public void PlayTakeDamageAnimation(float delay = 0)

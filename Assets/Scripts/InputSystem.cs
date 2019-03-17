@@ -11,6 +11,7 @@ namespace Assets.Scripts
     {
         public event Action<EntityComponent> OnCharacterClicked = (character) => { };
         public event Action<Vector2Int> OnEmptyTileClicked = (coordinates) => { };
+        public event Action OnOutOfBoundsClick = () => { };
 
         private LevelService levelService;
 
@@ -48,7 +49,7 @@ namespace Assets.Scripts
                 }
                 else
                 {
-                    print("Out of bounds click");
+                    OnOutOfBoundsClick();
                 }
             }
         }

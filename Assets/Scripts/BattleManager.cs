@@ -56,6 +56,7 @@ namespace Assets.Scripts
             inputSystem.Init(levelService);
             inputSystem.OnCharacterClicked += OnCharacterClicked;
             inputSystem.OnEmptyTileClicked += OnEmptyTileClicked;
+            inputSystem.OnOutOfBoundsClick += OnOutOfBoundsClick;
 
             StartTurn();
         }
@@ -137,6 +138,22 @@ namespace Assets.Scripts
             }
         }
 
+        private void OnOutOfBoundsClick()
+        {
+            switch (turnState)
+            {
+                case TurnState.USER_IDLE:
+                    break;
+                case TurnState.USER_CHAR_SELECTED:
+                    DeselectCharacter();
+                    break;
+                case TurnState.USER_CHAR_ACTION:
+                    break;
+                case TurnState.ENEMY_CHAR_ACTION:
+                    break;
+            }
+        }
+
         private void MoveCharacter(EntityComponent character, Vector2Int targetPosition)
         {
             List<Vector2Int> path = gridNavigator.GetPath(character.GridPosition, targetPosition);
@@ -145,6 +162,7 @@ namespace Assets.Scripts
                 return;
             }
 
+            print("Moving chracter to " + targetPosition);
             levelService.HideAllBreadCrumbs();
             movablePlayerCharacters.Remove(character);
             Vector2Int previousPosition = character.GridPosition;
@@ -152,7 +170,7 @@ namespace Assets.Scripts
             //TODO: Lock the input for duration of the movment?
             for (int nodeIdx = 1; nodeIdx < path.Count; nodeIdx++)
             {
-                float moveDelay = .5f * (nodeIdx - 1);
+                float moveDelay = .2f * (nodeIdx - 1);
                 Vector2Int nextPosition = path[nodeIdx];
                 if (nextPosition.x > previousPosition.x)
                 {
@@ -192,7 +210,7 @@ namespace Assets.Scripts
                 //Show walk breadcrumbs & cache possible destinations
                 characterAvailableDestinationsCache.Clear();
                 levelService.HideAllBreadCrumbs();
-                gridNavigator.ApplyActionOnNeighbours(selectedCharacter.GridPosition, walkDistance,
+                gridNavigator.ApplyActionOnNeighbours(selectedCharacter.GridPosition, walkDistance, true,
                     (depth, gridPosition) =>
                     {
                         levelService.SetBreadCrumbVisible(gridPosition.x, gridPosition.y, true, .1f * depth);
