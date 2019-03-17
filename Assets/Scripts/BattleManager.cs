@@ -22,21 +22,21 @@ namespace Assets.Scripts
         private GridNavigator gridNavigator;
         private InputSystem inputSystem;
 
-        private EntityComponent selectedCharacter;
-		private List<EntityComponent> enemies;
+        private Entity selectedCharacter;
+		private List<Entity> enemies;
 		private bool selectionToggle;
 		private bool selectionAttackTargetToggle;
 		private bool bannerToggle;
         private int walkDistance = 6;
 
-        private List<EntityComponent> movablePlayerCharacters = new List<EntityComponent>();
-        private List<EntityComponent> attackingPlayerCharacters = new List<EntityComponent>();
+        private List<Entity> movablePlayerCharacters = new List<Entity>();
+        private List<Entity> attackingPlayerCharacters = new List<Entity>();
 
         private TurnState turnState;
 
         //Currently selected character move/attack targets cache
         private List<Vector2Int> possibleMoveTargetsCache = new List<Vector2Int>();
-        private List<EntityComponent> possibleAttackTargetsCache = new List<EntityComponent>();
+        private List<Entity> possibleAttackTargetsCache = new List<Entity>();
 
         private void Start()
 		{
@@ -103,7 +103,7 @@ namespace Assets.Scripts
             }
         }
 
-        private void OnCharacterClicked(EntityComponent clickedCharacter)
+        private void OnCharacterClicked(Entity clickedCharacter)
         {
             switch (turnState)
             {
@@ -161,7 +161,7 @@ namespace Assets.Scripts
             }
         }
 
-        private void MoveCharacter(EntityComponent character, Vector2Int targetPosition)
+        private void MoveCharacter(Entity character, Vector2Int targetPosition)
         {
             List<Vector2Int> path = gridNavigator.GetPath(character.GridPosition, targetPosition);
             if (path != null)
@@ -174,27 +174,28 @@ namespace Assets.Scripts
             }
         }
 
-        private void AttackCharacter(EntityComponent attacker, EntityComponent target)
+        private void AttackCharacter(Entity attacker, Entity target)
         {
             foreach (var entity in levelService.GetEntities())
             {
-                entity.ShowSelectionAttackTarget(false);
+                entity.SetTargeted(false);
             }
             attackingPlayerCharacters.Remove(attacker);
             possibleAttackTargetsCache.Clear();
-            target.PlayTakeDamageAnimation();
-            target.PlayHealthBarAnimation(0);
+
+            //TODO: Extract the constant damage
+            target.Damage(1);
         }
 
-        private void SelectUserCharacter(EntityComponent selectedCharacter)
+        private void SelectUserCharacter(Entity selectedCharacter)
         {
             this.selectedCharacter = selectedCharacter;
 
             //Update HUD selection
             foreach (var entity in levelService.GetEntities())
             {
-                entity.ShowSelection(entity == selectedCharacter);
-                entity.ShowSelectionAttackTarget(false);
+                entity.SetSelected(entity == selectedCharacter);
+                entity.SetTargeted(false);
             }
             levelService.HideAllBreadCrumbs();
 
@@ -215,12 +216,12 @@ namespace Assets.Scripts
             bool characterCanAttack = attackingPlayerCharacters.Contains(selectedCharacter);
             if (characterCanAttack)
             {
-                List<EntityComponent> entitiesInRange = levelService.GetEntitiesInRangeCross(selectedCharacter, 1);
-                foreach (EntityComponent entity in entitiesInRange)
+                List<Entity> entitiesInRange = levelService.GetEntitiesInRangeCross(selectedCharacter, 1);
+                foreach (Entity entity in entitiesInRange)
                 {
                     if (entity.Faction == EntityFaction.Enemy)
                     {
-                        entity.ShowSelectionAttackTarget(true);
+                        entity.SetTargeted(true);
                         possibleAttackTargetsCache.Add(entity);
                     }
                 }
@@ -234,8 +235,8 @@ namespace Assets.Scripts
             levelService.HideAllBreadCrumbs();
             foreach (var entity in levelService.GetEntities())
             {
-                entity.ShowSelection(false);
-                entity.ShowSelectionAttackTarget(false);
+                entity.SetSelected(false);
+                entity.SetTargeted(false);
             }
 
             SetState(TurnState.USER_IDLE);
@@ -248,86 +249,76 @@ namespace Assets.Scripts
 
         private void Demo()
         {
-            if (Input.GetKeyDown(KeyCode.T))
-            {
-                bannerToggle = !bannerToggle;
+            //if (Input.GetKeyDown(KeyCode.T))
+            //{
+            //    bannerToggle = !bannerToggle;
 
-                if (bannerToggle)
-                {
-                    ui.ShowAndHideBanner("Player's turn");
-                }
-                else
-                {
-                    ui.ShowAndHideBanner("Enemy turn");
-                }
-            }
+            //    if (bannerToggle)
+            //    {
+            //        ui.ShowAndHideBanner("Player's turn");
+            //    }
+            //    else
+            //    {
+            //        ui.ShowAndHideBanner("Enemy turn");
+            //    }
+            //}
 
-            // This is how you move a character
-            if (Input.GetKeyDown(KeyCode.M))
-            {
-                var enemy = enemies[0];
-                enemy.Move(Direction.Down);
-                enemy.Move(Direction.Right, 0.5f);
-                enemy.Move(Direction.Down, 1);
-                enemy.Move(Direction.Down, 1.5f);
-                enemy.Move(Direction.Left, 2f);
-            }
 
-            // This is how you can trigger a quake animation :)
-            if (Input.GetKeyDown(KeyCode.Q))
-            {
-                var x = Random.Range(0, levelService.LevelData.Width);
-                var y = Random.Range(0, levelService.LevelData.Height);
-                var radius = Random.Range(2, 8);
-                levelService.PlayQuakeAnimation(x, y, radius);
-            }
+            //// This is how you can trigger a quake animation :)
+            //if (Input.GetKeyDown(KeyCode.Q))
+            //{
+            //    var x = Random.Range(0, levelService.LevelData.Width);
+            //    var y = Random.Range(0, levelService.LevelData.Height);
+            //    var radius = Random.Range(2, 8);
+            //    levelService.PlayQuakeAnimation(x, y, radius);
+            //}
 
-            // And this is how you trigger a damage animation
-            if (Input.GetKeyDown(KeyCode.A))
-            {
-                enemies[0].PlayTakeDamageAnimation();
-            }
+            //// And this is how you trigger a damage animation
+            //if (Input.GetKeyDown(KeyCode.A))
+            //{
+            //    enemies[0].PlayTakeDamageAnimation();
+            //}
 
-            // This is how you alter the healthbar for an entity
-            if (Input.GetKeyDown(KeyCode.H))
-            {
-                enemies[0].PlayHealthBarAnimation(Random.Range(0f, 1f));
-            }
+            //// This is how you alter the healthbar for an entity
+            //if (Input.GetKeyDown(KeyCode.H))
+            //{
+            //    enemies[0].PlayHealthBarAnimation(Random.Range(0f, 1f));
+            //}
 
-            // How to select a character
-            if (Input.GetKeyDown(KeyCode.S))
-            {
-                selectionToggle = !selectionToggle;
-                enemies[0].ShowSelection(selectionToggle);
-            }
+            //// How to select a character
+            //if (Input.GetKeyDown(KeyCode.S))
+            //{
+            //    selectionToggle = !selectionToggle;
+            //    enemies[0].ShowSelection(selectionToggle);
+            //}
 
-            // How to select a character (as an attack target)
-            if (Input.GetKeyDown(KeyCode.X))
-            {
-                selectionAttackTargetToggle = !selectionAttackTargetToggle;
-                enemies[0].ShowSelectionAttackTarget(selectionAttackTargetToggle);
-            }
+            //// How to select a character (as an attack target)
+            //if (Input.GetKeyDown(KeyCode.X))
+            //{
+            //    selectionAttackTargetToggle = !selectionAttackTargetToggle;
+            //    enemies[0].OnEntityTargeted(selectionAttackTargetToggle);
+            //}
 
-            // How to kill a character
-            if (Input.GetKeyDown(KeyCode.D))
-            {
-                enemies[0].PlayDeathAnimation();
-            }
+            //// How to kill a character
+            //if (Input.GetKeyDown(KeyCode.D))
+            //{
+            //    enemies[0].OnEntityDestroyed();
+            //}
 
-            // How to show a breadcrumbs path
-            if (Input.GetKeyDown(KeyCode.B))
-            {
-                levelService.SetBreadCrumbVisible(5, 1, true);
-                levelService.SetBreadCrumbVisible(5, 2, true, 0.1f);
-                levelService.SetBreadCrumbVisible(5, 3, true, 0.2f);
-                levelService.SetBreadCrumbVisible(5, 4, true, 0.3f);
-                levelService.SetBreadCrumbVisible(4, 4, true, 0.4f);
-            }
-            // And how to hide it...
-            else if (Input.GetKeyDown(KeyCode.V))
-            {
-                levelService.HideAllBreadCrumbs();
-            }
+            //// How to show a breadcrumbs path
+            //if (Input.GetKeyDown(KeyCode.B))
+            //{
+            //    levelService.SetBreadCrumbVisible(5, 1, true);
+            //    levelService.SetBreadCrumbVisible(5, 2, true, 0.1f);
+            //    levelService.SetBreadCrumbVisible(5, 3, true, 0.2f);
+            //    levelService.SetBreadCrumbVisible(5, 4, true, 0.3f);
+            //    levelService.SetBreadCrumbVisible(4, 4, true, 0.4f);
+            //}
+            //// And how to hide it...
+            //else if (Input.GetKeyDown(KeyCode.V))
+            //{
+            //    levelService.HideAllBreadCrumbs();
+            //}
         }
 	}
 }

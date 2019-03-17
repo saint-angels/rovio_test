@@ -8,7 +8,7 @@ namespace Assets.Scripts.Presentation.Levels
 		public int Width;
 		public int Height;
 		public LevelTileComponent[,] Tiles;
-		public List<EntityComponent> Entities;
-        public EntityComponent[,] TilesEntities;
+		public List<Entity> Entities;
+        public Entity[,] TilesEntities;
     }
 }

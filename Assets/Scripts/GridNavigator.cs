@@ -24,7 +24,7 @@ namespace Assets.Scripts
             {
                 Vector3 nodeWorldPosition = (Vector3)node.position;
                 Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinates(nodeWorldPosition.x, nodeWorldPosition.y);
-                EntityComponent entityAtNode = levelService.GetEntityAtPosition(nodeGridPosition.x, nodeGridPosition.y);
+                Entity entityAtNode = levelService.GetEntityAtPosition(nodeGridPosition.x, nodeGridPosition.y);
                 if (entityAtNode != null && entityAtNode.Type == EntityType.Obstacle)
                 {
                     node.Walkable = false;
@@ -71,23 +71,31 @@ namespace Assets.Scripts
             }
             else
             {
-                List<GraphNode> visitedNodes = new List<GraphNode>() { selectedNode };
+                Dictionary<GraphNode, int> visitedNodes = new Dictionary<GraphNode, int>();
+                visitedNodes.Add(selectedNode, 0);
                 DoActionOnNeighboursInternal(selectedNode, 1, maxDepth, onlyEmpty, visitedNodes, action);
             }
         }
 
-        private void DoActionOnNeighboursInternal(GraphNode node, int currentDepth, int maxDepth, bool onlyEmptyNodes, List<GraphNode> visitedNodes, Action<int, Vector2Int> action)
+        private void DoActionOnNeighboursInternal(GraphNode node, int currentDepth, int maxDepth, bool onlyEmptyNodes, Dictionary<GraphNode, int> visitedNodes, Action<int, Vector2Int> action)
         {
             if (currentDepth <= maxDepth)
             {
                 node.GetConnections((neighbour) =>
                 {
-                    if (visitedNodes.Contains(neighbour) == false)
+                    if (visitedNodes.ContainsKey(neighbour) == false || visitedNodes[neighbour] > currentDepth)
                     {
-                        visitedNodes.Add(neighbour);
+                        if (visitedNodes.ContainsKey(neighbour) == false)
+                        {
+                            visitedNodes.Add(neighbour, currentDepth);
+                        }
+                        else
+                        {
+                            visitedNodes[neighbour] = currentDepth;
+                        }
                         Vector3 neighbourWorldPosition = (Vector3)neighbour.position;
                         Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinates(neighbourWorldPosition.x, neighbourWorldPosition.y);
-                        EntityComponent entityAtNode = levelService.GetEntityAtPosition(neigbourGridCoordinates.x, neigbourGridCoordinates.y);
+                        Entity entityAtNode = levelService.GetEntityAtPosition(neigbourGridCoordinates.x, neigbourGridCoordinates.y);
                         bool nodeAcceptable = onlyEmptyNodes == false || entityAtNode == null;
                         if (nodeAcceptable)
                         {

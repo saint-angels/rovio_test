@@ -9,7 +9,7 @@ namespace Assets.Scripts
 {
     public class InputSystem : MonoBehaviour
     {
-        public event Action<EntityComponent> OnCharacterClicked = (character) => { };
+        public event Action<Entity> OnCharacterClicked = (character) => { };
         public event Action<Vector2Int> OnEmptyTileClicked = (coordinates) => { };
         public event Action OnOutOfBoundsClick = () => { };
 
@@ -30,7 +30,7 @@ namespace Assets.Scripts
                 bool isPointOnLevelGrid = levelService.IsPointOnLevelGrid(clickedCoordinates.x, clickedCoordinates.y);
                 if (isPointOnLevelGrid)
                 {
-                    EntityComponent clickedEntity = levelService.GetEntityAtPosition(clickedCoordinates.x, clickedCoordinates.y);
+                    Entity clickedEntity = levelService.GetEntityAtPosition(clickedCoordinates.x, clickedCoordinates.y);
                     if (clickedEntity != null)
                     {
                         if (clickedEntity.Type == EntityType.Character)

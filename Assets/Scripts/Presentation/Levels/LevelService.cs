@@ -17,7 +17,7 @@ namespace Assets.Scripts.Presentation.Levels
 		private GameObject tilePrefab;
 
 		private Sprite[] entitySprites;
-		private GameObject entityPrefab;
+		private Entity entityPrefab;
 
 		private Transform levelContainer;
 		private Transform tilesContainer;
@@ -26,13 +26,15 @@ namespace Assets.Scripts.Presentation.Levels
 		private float quakeAnimationCooldown;
 		private AudioComponent audio;
 
+        private int defaultCharacterHealth = 2;
+
 		public LevelService()
 		{
 			tileSprites = Resources.LoadAll<Sprite>("Sprites/Tileset");
 			tilePrefab = Resources.Load<GameObject>("Prefabs/Tile");
 
 			entitySprites = Resources.LoadAll<Sprite>("Sprites/Entities");
-			entityPrefab = Resources.Load<GameObject>("Prefabs/Entity");
+			entityPrefab = Resources.Load<Entity>("Prefabs/Entity");
 
 			levelContainer = GameObject.Find("Level").transform;
 			tilesContainer = levelContainer.transform.Find("Tiles");
@@ -41,12 +43,12 @@ namespace Assets.Scripts.Presentation.Levels
 			audio = GameObject.Find("Audio").GetComponent<AudioComponent>();
 		}
 
-        public List<EntityComponent> GetCharacters(EntityFaction faction)
+        public List<Entity> GetCharacters(EntityFaction faction)
         {
             return LevelData.Entities.Where(p => p.Type == EntityType.Character && p.Faction == faction).ToList();
         }
 
-        public List<EntityComponent> GetEntities()
+        public List<Entity> GetEntities()
         {
             return LevelData.Entities;
         }
@@ -58,7 +60,7 @@ namespace Assets.Scripts.Presentation.Levels
         }
 
         //Note: there could be only 1 entity at each tile at a time.
-        public EntityComponent GetEntityAtPosition(int x, int y)
+        public Entity GetEntityAtPosition(int x, int y)
         {
             if (IsPointOnLevelGrid(x, y))
             {
@@ -70,17 +72,17 @@ namespace Assets.Scripts.Presentation.Levels
             }
         }
 
-        public List<EntityComponent> GetEntitiesInRangeCross(EntityComponent aroundEntity, int range)
+        public List<Entity> GetEntitiesInRangeCross(Entity aroundEntity, int range)
         {
             Vector2Int position = aroundEntity.GridPosition;
 
-            List<EntityComponent> entitiesList = new List<EntityComponent>();
+            List<Entity> entitiesList = new List<Entity>();
 
             //Check x axis
             for (int xOffset = -range; xOffset <= range; xOffset++)
             {
                 Vector2Int offsetPosition = new Vector2Int(position.x + xOffset, position.y);
-                EntityComponent entity = GetEntityAtPosition(offsetPosition.x, offsetPosition.y);
+                Entity entity = GetEntityAtPosition(offsetPosition.x, offsetPosition.y);
                 if (entity != null && entity != aroundEntity)
                 {
                     entitiesList.Add(entity);
@@ -91,7 +93,7 @@ namespace Assets.Scripts.Presentation.Levels
             for (int yOffset = -range; yOffset <= range; yOffset++)
             {
                 Vector2Int offsetPosition = new Vector2Int(position.x, position.y + yOffset);
-                EntityComponent entity = GetEntityAtPosition(offsetPosition.x, offsetPosition.y);
+                Entity entity = GetEntityAtPosition(offsetPosition.x, offsetPosition.y);
                 if (entity != null && entity != aroundEntity)
                 {
                     entitiesList.Add(entity);
@@ -114,8 +116,8 @@ namespace Assets.Scripts.Presentation.Levels
 				Width = width,
 				Height = height,
 				Tiles = new LevelTileComponent[width, height],
-				Entities = new List<EntityComponent>(),
-                TilesEntities = new EntityComponent[width, height]
+				Entities = new List<Entity>(),
+                TilesEntities = new Entity[width, height]
 			};
 
 			// Ground
@@ -187,12 +189,16 @@ namespace Assets.Scripts.Presentation.Levels
 
 		private void InstantiateEntity(int x, int y, Sprite sprite, EntityType type, EntityFaction faction)
 		{
-			var entity = GameObject.Instantiate(entityPrefab, Vector3.zero, Quaternion.identity, entitiesContainer).GetComponent<EntityComponent>();
+            Entity entity = GameObject.Instantiate(entityPrefab, Vector3.zero, Quaternion.identity, entitiesContainer);
             entity.name = type.ToString();
-            entity.Initialize(x, y, sprite, type, faction);
+            entity.Init(x, y, sprite, type, faction);
+            if (type == EntityType.Character)
+            {
+                entity.InitHealth(defaultCharacterHealth);
+            }
 			LevelData.Entities.Add(entity);
             LevelData.TilesEntities[x, y] = entity;
-            entity.OnMove += OnEntityMove;
+            entity.OnMoved += OnEntityMoved;
 		}
 
 		public void SetBreadCrumbVisible(int x, int y, bool isVisible, float delay = 0)
@@ -272,7 +278,7 @@ namespace Assets.Scripts.Presentation.Levels
 			audio.PlayQuake();
 		}
 
-        private void OnEntityMove(EntityComponent entity, Vector2Int oldPosition, Vector2Int newPosition)
+        private void OnEntityMoved(Entity entity, Vector2Int oldPosition, Vector2Int newPosition, int stepIndex)
         {
             LevelData.TilesEntities[oldPosition.x, oldPosition.y] = null;
             LevelData.TilesEntities[newPosition.x, newPosition.y] = entity;
