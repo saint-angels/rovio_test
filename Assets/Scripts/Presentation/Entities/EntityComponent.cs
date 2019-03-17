@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using Assets.Scripts.Presentation.Levels;
+using Assets.Scripts.Promises;
 using DG.Tweening;
 using UnityEngine;
 
@@ -9,7 +11,7 @@ namespace Assets.Scripts.Presentation.Entities
     [SelectionBase]
 	public class EntityComponent : MonoBehaviour
 	{
-        public event Action<EntityComponent, Vector2Int, Vector2Int> OnMoved = (entity, oldPosition, newPosition) => { };
+        public event Action<EntityComponent, Vector2Int, Vector2Int> OnMove = (entity, oldPosition, newPosition) => { };
         public event Action<EntityComponent> OnDestroyed = (e) => { };
 
 		public SpriteRenderer Renderer;
@@ -48,6 +50,35 @@ namespace Assets.Scripts.Presentation.Entities
 			}
 		}
 
+        public IPromise Move(List<Vector2Int> pathDirections)
+        {
+            Deferred moveDeferred = Deferred.GetFromPool();
+            Vector2Int oldPosition = GridPosition;
+
+            Sequence moveSequence = DOTween.Sequence();
+            foreach (Vector2Int pathStepPosition in pathDirections)
+            {
+                Vector2 pathStepPositionWorld = LevelGrid.ToWorldCoordinates(pathStepPosition.x, pathStepPosition.y);
+                moveSequence.Append(
+                    transform.DOJump(pathStepPositionWorld, 0.25f, 1, 0.2f).SetEase(Ease.InQuint)
+                    .OnComplete(() =>
+                        {
+                            Renderer.sortingOrder = LevelGrid.GetSortingOrder(GridPosition.x, GridPosition.y);
+                            audio.PlayMove();
+                        })
+                    );
+            }
+
+            moveSequence.OnComplete(() =>
+            {
+                GridPosition = pathDirections[pathDirections.Count - 1];
+                OnMove(this, oldPosition, GridPosition);
+                moveDeferred.Resolve();
+            });
+
+            return moveDeferred;
+        }
+
 		public void Move(Direction direction, float delay = 0)
 		{
 			StartCoroutine(MoveRoutine(direction, delay));
@@ -82,7 +113,7 @@ namespace Assets.Scripts.Presentation.Entities
 			transform.DOJump(targetPosition, 0.25f, 1, 0.2f).SetEase(Ease.InQuint);
 			Renderer.sortingOrder = LevelGrid.GetSortingOrder(GridPosition.x, GridPosition.y);
 			audio.PlayMove();
-            OnMoved(this, oldPosition, GridPosition);
+            OnMove(this, oldPosition, GridPosition);
 		}
 
 		public void PlayTakeDamageAnimation(float delay = 0)

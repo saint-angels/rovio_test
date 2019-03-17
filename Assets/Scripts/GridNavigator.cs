@@ -10,8 +10,11 @@ namespace Assets.Scripts
 {
     public class GridNavigator : MonoBehaviour
     {
+        private LevelService levelService;
+
         public void Init(LevelService levelService)
         {
+            this.levelService = levelService;
             //Init graph
             var graph = AstarPath.active.data.pointGraph;
             graph.limits = new Vector3(LevelGrid.TileSize.x, LevelGrid.TileSize.y);
@@ -46,16 +49,19 @@ namespace Assets.Scripts
             else
             {
                 List<Vector2Int> gridPath = new List<Vector2Int>();
-                foreach (Vector3 nodePosition in path.vectorPath)
+
+                //Construct a path in grid coordinates, skipping the start node
+                for (int nodeIdx = 1; nodeIdx < path.vectorPath.Count; nodeIdx++)
                 {
-                    Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinates(nodePosition.x, nodePosition.y);
+                    Vector3 nodeWorldPosition = path.vectorPath[nodeIdx];
+                    Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinates(nodeWorldPosition.x, nodeWorldPosition.y);
                     gridPath.Add(nodeGridPosition);
                 }
                 return gridPath;
             }
         }
 
-        public void ApplyActionOnNeighbours(Vector2Int nodeGridPosition, int maxDepth, bool onlyWalkable, Action<int, Vector2Int> action)
+        public void DoActionOnNeighbours(Vector2Int nodeGridPosition, int maxDepth, bool onlyEmpty, Action<int, Vector2Int> action)
         {
             Vector3 nodePositionWorld = LevelGrid.ToWorldCoordinates(nodeGridPosition);
             GraphNode selectedNode = AstarPath.active.data.pointGraph.GetNearest(nodePositionWorld).node;
@@ -66,11 +72,11 @@ namespace Assets.Scripts
             else
             {
                 List<GraphNode> visitedNodes = new List<GraphNode>() { selectedNode };
-                ApplyActionOnNeighboursInternal(selectedNode, 1, maxDepth, onlyWalkable, visitedNodes, action);
+                DoActionOnNeighboursInternal(selectedNode, 1, maxDepth, onlyEmpty, visitedNodes, action);
             }
         }
 
-        private void ApplyActionOnNeighboursInternal(GraphNode node, int currentDepth, int maxDepth, bool onlyWalkable, List<GraphNode> visitedNodes, Action<int, Vector2Int> action)
+        private void DoActionOnNeighboursInternal(GraphNode node, int currentDepth, int maxDepth, bool onlyEmptyNodes, List<GraphNode> visitedNodes, Action<int, Vector2Int> action)
         {
             if (currentDepth <= maxDepth)
             {
@@ -79,12 +85,14 @@ namespace Assets.Scripts
                     if (visitedNodes.Contains(neighbour) == false)
                     {
                         visitedNodes.Add(neighbour);
-                        if (onlyWalkable == false || neighbour.Walkable)
+                        Vector3 neighbourWorldPosition = (Vector3)neighbour.position;
+                        Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinates(neighbourWorldPosition.x, neighbourWorldPosition.y);
+                        EntityComponent entityAtNode = levelService.GetEntityAtPosition(neigbourGridCoordinates.x, neigbourGridCoordinates.y);
+                        bool nodeAcceptable = onlyEmptyNodes == false || entityAtNode == null;
+                        if (nodeAcceptable)
                         {
-                            Vector3 neighbourWorldPosition = (Vector3)neighbour.position;
-                            Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinates(neighbourWorldPosition.x, neighbourWorldPosition.y);
                             action(currentDepth, neigbourGridCoordinates);
-                            ApplyActionOnNeighboursInternal(neighbour, currentDepth + 1, maxDepth, onlyWalkable, visitedNodes, action);
+                            DoActionOnNeighboursInternal(neighbour, currentDepth + 1, maxDepth, onlyEmptyNodes, visitedNodes, action);
                         }
                     }
                 });

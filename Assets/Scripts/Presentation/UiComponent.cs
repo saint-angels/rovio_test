@@ -1,11 +1,16 @@
 ﻿using DG.Tweening;
+using System;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Assets.Scripts.UI
 {
-	public class UiComponent : MonoBehaviour
+	public class UIComponent : MonoBehaviour
 	{
+        public event Action OnEndTurnClicked = () => { };
+
+        [SerializeField] private Button buttonEndTurn;
         [SerializeField] private RawImage Overlay;
         [SerializeField] private GameObject Banner;
         [SerializeField] private Text BannerText;
@@ -15,9 +20,10 @@ namespace Assets.Scripts.UI
 		{
 			Overlay.color = new Color(0, 0, 0, 0);
 			Banner.gameObject.SetActive(false);
-		}
+            buttonEndTurn.onClick.AddListener(() => OnEndTurnClicked());
+        }
 
-		public void ShowAndHideBanner(string text, float showDelay = 0, float hideDelay = 2)
+        public void ShowAndHideBanner(string text, float showDelay = 0, float hideDelay = 2)
 		{
 			ShowBanner(text, showDelay);
 			HideBanner(showDelay + hideDelay);

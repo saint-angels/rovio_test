@@ -775,6 +775,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29ede0e142833cc42847f8590511710e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  buttonEndTurn: {fileID: 1399681708}
   Overlay: {fileID: 1197693258}
   Banner: {fileID: 1476487952}
   BannerText: {fileID: 538540836}

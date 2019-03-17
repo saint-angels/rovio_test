@@ -161,7 +161,7 @@ namespace Assets.Scripts.Presentation.Levels
             entity.Initialize(x, y, sprite, type, faction);
 			LevelData.Entities.Add(entity);
             LevelData.TilesEntities[x, y] = entity;
-            entity.OnMoved += OnEntityMoved;
+            entity.OnMove += OnEntityMove;
 		}
 
 		public void SetBreadCrumbVisible(int x, int y, bool isVisible, float delay = 0)
@@ -241,7 +241,7 @@ namespace Assets.Scripts.Presentation.Levels
 			audio.PlayQuake();
 		}
 
-        private void OnEntityMoved(EntityComponent entity, Vector2Int oldPosition, Vector2Int newPosition)
+        private void OnEntityMove(EntityComponent entity, Vector2Int oldPosition, Vector2Int newPosition)
         {
             LevelData.TilesEntities[oldPosition.x, oldPosition.y] = null;
             LevelData.TilesEntities[newPosition.x, newPosition.y] = entity;

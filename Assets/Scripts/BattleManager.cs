@@ -14,12 +14,11 @@ namespace Assets.Scripts
         {
             USER_IDLE,
             USER_CHAR_SELECTED,
-            USER_CHAR_ACTION,
-            ENEMY_CHAR_ACTION,
+            CHARACTER_ANIMATION,
         }
 
 		private LevelService levelService;
-		private UiComponent ui;
+		private UIComponent ui;
         private GridNavigator gridNavigator;
         private InputSystem inputSystem;
 
@@ -47,7 +46,8 @@ namespace Assets.Scripts
             //TODO: Remove enemies from list after death
             enemies = levelService.GetCharacters(EntityFaction.Enemy);
 
-			ui = GameObject.Find("Canvas").GetComponent<UiComponent>();
+			ui = GameObject.Find("Canvas").GetComponent<UIComponent>();
+            ui.OnEndTurnClicked += OnEndTurnClicked;
 
             gridNavigator = GetComponent<GridNavigator>() ?? gameObject.AddComponent<GridNavigator>();
             gridNavigator.Init(levelService);
@@ -69,11 +69,7 @@ namespace Assets.Scripts
                     break;
                 case TurnState.USER_CHAR_SELECTED:
                     break;
-                case TurnState.USER_CHAR_ACTION:
-                    break;
-                case TurnState.ENEMY_CHAR_ACTION:
-                    break;
-                default:
+                case TurnState.CHARACTER_ANIMATION:
                     break;
             }
             turnState = newTurnState;
@@ -91,9 +87,25 @@ namespace Assets.Scripts
 
             movablePlayerCharacters.Clear();
             movablePlayerCharacters.AddRange(levelService.GetCharacters(EntityFaction.Player));
+            attackingPlayerCharacters.Clear();
             attackingPlayerCharacters.AddRange(movablePlayerCharacters);
 
             SetState(TurnState.USER_IDLE);
+        }
+
+        private void OnEndTurnClicked()
+        {
+            //TODO: Start AI logic here
+            switch (turnState)
+            {
+                case TurnState.USER_IDLE:
+                    StartTurn();
+                    break;
+                case TurnState.USER_CHAR_SELECTED:
+                    DeselectCharacter();
+                    StartTurn();
+                    break;
+            }
         }
 
         private void OnCharacterClicked(EntityComponent character)
@@ -107,9 +119,7 @@ namespace Assets.Scripts
                         SelectUserCharacter(character);
                     }
                     break;
-                case TurnState.USER_CHAR_ACTION:
-                    break;
-                case TurnState.ENEMY_CHAR_ACTION:
+                case TurnState.CHARACTER_ANIMATION:
                     break;
             }
         }
@@ -131,9 +141,7 @@ namespace Assets.Scripts
                         DeselectCharacter();
                     }
                     break;
-                case TurnState.USER_CHAR_ACTION:
-                    break;
-                case TurnState.ENEMY_CHAR_ACTION:
+                case TurnState.CHARACTER_ANIMATION:
                     break;
             }
         }
@@ -147,9 +155,7 @@ namespace Assets.Scripts
                 case TurnState.USER_CHAR_SELECTED:
                     DeselectCharacter();
                     break;
-                case TurnState.USER_CHAR_ACTION:
-                    break;
-                case TurnState.ENEMY_CHAR_ACTION:
+                case TurnState.CHARACTER_ANIMATION:
                     break;
             }
         }
@@ -157,39 +163,12 @@ namespace Assets.Scripts
         private void MoveCharacter(EntityComponent character, Vector2Int targetPosition)
         {
             List<Vector2Int> path = gridNavigator.GetPath(character.GridPosition, targetPosition);
-            if (path == null)
+            if (path != null)
             {
-                return;
-            }
-
-            print("Moving chracter to " + targetPosition);
-            levelService.HideAllBreadCrumbs();
-            movablePlayerCharacters.Remove(character);
-            Vector2Int previousPosition = character.GridPosition;
-
-            //TODO: Lock the input for duration of the movment?
-            for (int nodeIdx = 1; nodeIdx < path.Count; nodeIdx++)
-            {
-                float moveDelay = .2f * (nodeIdx - 1);
-                Vector2Int nextPosition = path[nodeIdx];
-                if (nextPosition.x > previousPosition.x)
-                {
-                    character.Move(Direction.Right, moveDelay);
-                }
-                else if (nextPosition.x < previousPosition.x)
-                {
-                    character.Move(Direction.Left, moveDelay);
-                }
-                else if (nextPosition.y > previousPosition.y)
-                {
-                    character.Move(Direction.Down, moveDelay);
-                }
-                else if (nextPosition.y < previousPosition.y)
-                {
-                    character.Move(Direction.Up, moveDelay);
-                }
-
-                previousPosition = nextPosition;
+                SetState(TurnState.CHARACTER_ANIMATION);
+                levelService.HideAllBreadCrumbs();
+                movablePlayerCharacters.Remove(character);
+                character.Move(path).Done(() => SetState(TurnState.USER_CHAR_SELECTED));
             }
         }
 
@@ -210,7 +189,7 @@ namespace Assets.Scripts
                 //Show walk breadcrumbs & cache possible destinations
                 characterAvailableDestinationsCache.Clear();
                 levelService.HideAllBreadCrumbs();
-                gridNavigator.ApplyActionOnNeighbours(selectedCharacter.GridPosition, walkDistance, true,
+                gridNavigator.DoActionOnNeighbours(selectedCharacter.GridPosition, walkDistance, true,
                     (depth, gridPosition) =>
                     {
                         levelService.SetBreadCrumbVisible(gridPosition.x, gridPosition.y, true, .1f * depth);
