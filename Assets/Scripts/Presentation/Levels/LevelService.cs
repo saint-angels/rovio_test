@@ -27,6 +27,8 @@ namespace Assets.Scripts.Presentation.Levels
 		private AudioComponent audio;
 
         private int defaultCharacterHealth = 2;
+        private int defaultCharacterAttackDamage = 1;
+
 
 		public LevelService()
 		{
@@ -194,7 +196,7 @@ namespace Assets.Scripts.Presentation.Levels
             entity.Init(x, y, sprite, type, faction);
             if (type == EntityType.Character)
             {
-                entity.InitHealth(defaultCharacterHealth);
+                entity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage);
             }
 			LevelData.Entities.Add(entity);
             LevelData.TilesEntities[x, y] = entity;

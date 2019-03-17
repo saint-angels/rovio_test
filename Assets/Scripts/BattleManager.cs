@@ -183,8 +183,7 @@ namespace Assets.Scripts
             attackingPlayerCharacters.Remove(attacker);
             possibleAttackTargetsCache.Clear();
 
-            //TODO: Extract the constant damage
-            target.Damage(1);
+            target.Damage(attacker.AttackDamage);
         }
 
         private void SelectUserCharacter(Entity selectedCharacter)
