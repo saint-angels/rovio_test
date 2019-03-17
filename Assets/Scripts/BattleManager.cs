@@ -23,10 +23,6 @@ namespace Assets.Scripts
         private InputSystem inputSystem;
 
         private Entity selectedCharacter;
-		private List<Entity> enemies;
-		private bool selectionToggle;
-		private bool selectionAttackTargetToggle;
-		private bool bannerToggle;
 
         private List<Entity> movablePlayerCharacters = new List<Entity>();
         private List<Entity> attackingPlayerCharacters = new List<Entity>();
@@ -41,11 +37,7 @@ namespace Assets.Scripts
 		{
 			// Load the level
 			levelService = new LevelService();
-			levelService.LoadLevel("Level2");
-
-            // Grab all enemies
-            //TODO: Remove enemies from list after death?
-            enemies = levelService.GetCharacters(EntityFaction.Enemy);
+			levelService.LoadLevel("Level1");
 
 			ui = GameObject.Find("Canvas").GetComponent<UIComponent>();
             ui.OnEndTurnClicked += OnEndTurnClicked;
@@ -59,7 +51,7 @@ namespace Assets.Scripts
             inputSystem.OnEmptyTileClicked += OnEmptyTileClicked;
             inputSystem.OnOutOfBoundsClick += OnOutOfBoundsClick;
 
-            StartTurn();
+            StartPlayerTurn();
         }
 
         private void SetState(TurnState newTurnState)
@@ -76,7 +68,7 @@ namespace Assets.Scripts
             turnState = newTurnState;
         }
 
-        private void StartTurn()
+        private void StartPlayerTurn()
         {
             movablePlayerCharacters.Clear();
             attackingPlayerCharacters.Clear();
@@ -86,18 +78,50 @@ namespace Assets.Scripts
             SetState(TurnState.USER_IDLE);
         }
 
+        private void StartEnemyTurn()
+        {
+            var enemies = levelService.GetCharacters(EntityFaction.Enemy);
+            foreach (var enemy in enemies)
+            {
+                bool attackSuccess = EntityTryAttackFractionInRange(enemy, EntityFaction.Player);
+                if (attackSuccess == false)
+                {
+                    Entity closestPlayerCharacter = levelService.GetClosestCharacter(enemy.GridPosition, EntityFaction.Player);
+                    if (closestPlayerCharacter != null)
+                    {
+                        List<Vector2Int> path = gridNavigator.GetPath(enemy.GridPosition, closestPlayerCharacter.GridPosition, enemy.MaxWalkDistance);
+                        Vector2Int moveTarget = path.Last() == closestPlayerCharacter.GridPosition ? path[path.Count - 2] : path[path.Count - 1];
+                        MoveCharacter(enemy, moveTarget);
+                        EntityTryAttackFractionInRange(enemy, EntityFaction.Player);
+                    }
+                }
+            }
+            CheckForGameOver();
+        }
+
+        private bool EntityTryAttackFractionInRange(Entity attacker, EntityFaction enemyFaction)
+        {
+            List<Entity> entitiesInRange = levelService.GetEntitiesInRange(attacker, enemyFaction);
+            if (entitiesInRange.Count > 0)
+            {
+                entitiesInRange[0].Damage(attacker.AttackDamage);
+                return true;
+            }
+            return false;
+        }
+
         private void OnEndTurnClicked()
         {
-            //TODO: Start AI logic here
-            //TODO: Check if battle finished?
+            StartEnemyTurn();
+
             switch (turnState)
             {
                 case TurnState.USER_IDLE:
-                    StartTurn();
+                    StartPlayerTurn();
                     break;
                 case TurnState.USER_CHAR_SELECTED:
                     DeselectCharacter();
-                    StartTurn();
+                    StartPlayerTurn();
                     break;
             }
         }
@@ -145,8 +169,6 @@ namespace Assets.Scripts
                         DeselectCharacter();
                     }
                     break;
-                case TurnState.ANIMATION_IN_PROGRESS:
-                    break;
             }
         }
 
@@ -162,7 +184,7 @@ namespace Assets.Scripts
 
         private void MoveCharacter(Entity character, Vector2Int targetPosition)
         {
-            List<Vector2Int> path = gridNavigator.GetPath(character.GridPosition, targetPosition);
+            List<Vector2Int> path = gridNavigator.GetPath(character.GridPosition, targetPosition, character.MaxWalkDistance);
             if (path != null)
             {
                 levelService.HideAllBreadCrumbs();
@@ -219,7 +241,7 @@ namespace Assets.Scripts
             if (characterCanMove)
             {
                 //Show walk breadcrumbs & cache possible destinations
-                gridNavigator.DoActionOnNeighbours(selectedCharacter.GridPosition, selectedCharacter.WalkDistance, true,
+                gridNavigator.DoActionOnNeighbours(selectedCharacter.GridPosition, selectedCharacter.MaxWalkDistance, true,
                     (depth, gridPosition) =>
                     {
                         levelService.SetBreadCrumbVisible(gridPosition.x, gridPosition.y, true, .1f * depth);
@@ -231,7 +253,7 @@ namespace Assets.Scripts
             bool characterCanAttack = attackingPlayerCharacters.Contains(selectedCharacter);
             if (characterCanAttack)
             {
-                List<Entity> entitiesInRange = levelService.GetEntitiesInRangeCross(selectedCharacter, 1);
+                List<Entity> entitiesInRange = levelService.GetEntitiesInRange(selectedCharacter, EntityFaction.Enemy);
                 foreach (Entity entity in entitiesInRange)
                 {
                     if (entity.Faction == EntityFaction.Enemy)
@@ -264,21 +286,6 @@ namespace Assets.Scripts
 
         private void Demo()
         {
-            //if (Input.GetKeyDown(KeyCode.T))
-            //{
-            //    bannerToggle = !bannerToggle;
-
-            //    if (bannerToggle)
-            //    {
-            //        ui.ShowAndHideBanner("Player's turn");
-            //    }
-            //    else
-            //    {
-            //        ui.ShowAndHideBanner("Enemy turn");
-            //    }
-            //}
-
-
             //// This is how you can trigger a quake animation :)
             //if (Input.GetKeyDown(KeyCode.Q))
             //{

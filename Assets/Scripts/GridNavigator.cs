@@ -32,7 +32,7 @@ namespace Assets.Scripts
             }
         }
 
-        public List<Vector2Int> GetPath(Vector2Int from, Vector2Int to)
+        public List<Vector2Int> GetPath(Vector2Int from, Vector2Int to, int maxSteps)
         {
             Vector2 fromWorldPosition = LevelGrid.ToWorldCoordinates(from);
             Vector2 toWorldPosition = LevelGrid.ToWorldCoordinates(to);
@@ -51,7 +51,7 @@ namespace Assets.Scripts
                 List<Vector2Int> gridPath = new List<Vector2Int>();
 
                 //Construct a path in grid coordinates, skipping the start node
-                for (int nodeIdx = 1; nodeIdx < path.vectorPath.Count; nodeIdx++)
+                for (int nodeIdx = 1; nodeIdx < path.vectorPath.Count && nodeIdx <= maxSteps; nodeIdx++)
                 {
                     Vector3 nodeWorldPosition = path.vectorPath[nodeIdx];
                     Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinates(nodeWorldPosition.x, nodeWorldPosition.y);

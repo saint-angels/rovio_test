@@ -29,6 +29,7 @@ namespace Assets.Scripts.Presentation.Levels
         private int defaultCharacterHealth = 2;
         private int defaultCharacterAttackDamage = 1;
         private int defaultCharacterWalkDistance = 6;
+        private int defaultCharacterAttackrange = 1;
 
 
 		public LevelService()
@@ -49,6 +50,14 @@ namespace Assets.Scripts.Presentation.Levels
         public List<Entity> GetCharacters(EntityFaction faction)
         {
             return LevelData.Entities.Where(p => p.Type == EntityType.Character && p.Faction == faction).ToList();
+        }
+
+        public Entity GetClosestCharacter(Vector2Int targetPosition, EntityFaction faction)
+        {
+            return LevelData.Entities
+                        .Where(p => p.Type == EntityType.Character && p.Faction == faction)
+                        .OrderBy((entity) => Vector2Int.Distance(targetPosition, entity.GridPosition))
+                        .FirstOrDefault();
         }
 
         public List<Entity> GetEntities()
@@ -75,9 +84,10 @@ namespace Assets.Scripts.Presentation.Levels
             }
         }
 
-        public List<Entity> GetEntitiesInRangeCross(Entity aroundEntity, int range)
+        public List<Entity> GetEntitiesInRange(Entity attacker, EntityFaction targetFaction)
         {
-            Vector2Int position = aroundEntity.GridPosition;
+            int range = attacker.AttackRange;
+            Vector2Int position = attacker.GridPosition;
 
             List<Entity> entitiesList = new List<Entity>();
 
@@ -86,7 +96,7 @@ namespace Assets.Scripts.Presentation.Levels
             {
                 Vector2Int offsetPosition = new Vector2Int(position.x + xOffset, position.y);
                 Entity entity = GetEntityAtPosition(offsetPosition.x, offsetPosition.y);
-                if (entity != null && entity != aroundEntity)
+                if (entity != null && entity != attacker && entity.Faction == targetFaction)
                 {
                     entitiesList.Add(entity);
                 }
@@ -97,7 +107,7 @@ namespace Assets.Scripts.Presentation.Levels
             {
                 Vector2Int offsetPosition = new Vector2Int(position.x, position.y + yOffset);
                 Entity entity = GetEntityAtPosition(offsetPosition.x, offsetPosition.y);
-                if (entity != null && entity != aroundEntity)
+                if (entity != null && entity != attacker && entity.Faction == targetFaction)
                 {
                     entitiesList.Add(entity);
                 }
@@ -197,7 +207,7 @@ namespace Assets.Scripts.Presentation.Levels
             entity.Init(x, y, sprite, type, faction);
             if (type == EntityType.Character)
             {
-                entity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance);
+                entity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance, defaultCharacterAttackrange);
                 entity.OnMovementFinished += OnEntityMoved;
                 entity.OnDestroyed += OnEntityDestroyed;
             }
