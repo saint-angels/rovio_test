@@ -25,7 +25,7 @@ namespace Assets.Scripts
             if (Input.GetMouseButtonDown(0))
             {
                 Vector2Int clickedCoordinates = LevelGrid.MouseToGridCoordinates();
-                print("Clicked on " + clickedCoordinates);
+                //print("Clicked on " + clickedCoordinates);
                 
                 bool isPointOnLevelGrid = levelService.IsPointOnLevelGrid(clickedCoordinates.x, clickedCoordinates.y);
                 if (isPointOnLevelGrid)

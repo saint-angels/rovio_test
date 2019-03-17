@@ -14,7 +14,7 @@ namespace Assets.Scripts
         {
             USER_IDLE,
             USER_CHAR_SELECTED,
-            CHARACTER_ANIMATION,
+            ANIMATION_IN_PROGRESS,
         }
 
 		private LevelService levelService;
@@ -34,16 +34,18 @@ namespace Assets.Scripts
 
         private TurnState turnState;
 
-        private List<Vector2Int> characterAvailableDestinationsCache = new List<Vector2Int>();
+        //Currently selected character move/attack targets cache
+        private List<Vector2Int> possibleMoveTargetsCache = new List<Vector2Int>();
+        private List<EntityComponent> possibleAttackTargetsCache = new List<EntityComponent>();
 
         private void Start()
 		{
 			// Load the level
 			levelService = new LevelService();
-			levelService.LoadLevel("Level1");
+			levelService.LoadLevel("Level2");
 
             // Grab all enemies
-            //TODO: Remove enemies from list after death
+            //TODO: Remove enemies from list after death?
             enemies = levelService.GetCharacters(EntityFaction.Enemy);
 
 			ui = GameObject.Find("Canvas").GetComponent<UIComponent>();
@@ -69,7 +71,7 @@ namespace Assets.Scripts
                     break;
                 case TurnState.USER_CHAR_SELECTED:
                     break;
-                case TurnState.CHARACTER_ANIMATION:
+                case TurnState.ANIMATION_IN_PROGRESS:
                     break;
             }
             turnState = newTurnState;
@@ -77,17 +79,9 @@ namespace Assets.Scripts
 
         private void StartTurn()
         {
-            //Select player characters
-            List<EntityComponent> playerCharacters = levelService.GetCharacters(EntityFaction.Player);
-            if (playerCharacters.Count == 0)
-            {
-                Debug.LogError("Turn started without any player characters!");
-                return;
-            }
-
             movablePlayerCharacters.Clear();
-            movablePlayerCharacters.AddRange(levelService.GetCharacters(EntityFaction.Player));
             attackingPlayerCharacters.Clear();
+            movablePlayerCharacters.AddRange(levelService.GetCharacters(EntityFaction.Player));
             attackingPlayerCharacters.AddRange(movablePlayerCharacters);
 
             SetState(TurnState.USER_IDLE);
@@ -96,6 +90,7 @@ namespace Assets.Scripts
         private void OnEndTurnClicked()
         {
             //TODO: Start AI logic here
+            //TODO: Check if battle finished?
             switch (turnState)
             {
                 case TurnState.USER_IDLE:
@@ -108,18 +103,29 @@ namespace Assets.Scripts
             }
         }
 
-        private void OnCharacterClicked(EntityComponent character)
+        private void OnCharacterClicked(EntityComponent clickedCharacter)
         {
             switch (turnState)
             {
                 case TurnState.USER_IDLE:
-                case TurnState.USER_CHAR_SELECTED:
-                    if (character.Faction == EntityFaction.Player)
+                    if (clickedCharacter.Faction == EntityFaction.Player)
                     {
-                        SelectUserCharacter(character);
+                        SelectUserCharacter(clickedCharacter);
                     }
                     break;
-                case TurnState.CHARACTER_ANIMATION:
+                case TurnState.USER_CHAR_SELECTED:
+                    switch (clickedCharacter.Faction)
+                    {
+                        case EntityFaction.Player:
+                            SelectUserCharacter(clickedCharacter);
+                            break;
+                        case EntityFaction.Enemy:
+                            if (possibleAttackTargetsCache.Contains(clickedCharacter))
+                            {
+                                AttackCharacter(selectedCharacter, clickedCharacter);
+                            }
+                            break;
+                    }
                     break;
             }
         }
@@ -131,8 +137,7 @@ namespace Assets.Scripts
                 case TurnState.USER_IDLE:
                     break;
                 case TurnState.USER_CHAR_SELECTED:
-                    bool characterCanMove = movablePlayerCharacters.Contains(selectedCharacter);
-                    if (characterAvailableDestinationsCache.Contains(gridPosition) && characterCanMove)
+                    if (possibleMoveTargetsCache.Contains(gridPosition))
                     {
                         MoveCharacter(selectedCharacter, gridPosition);
                     }
@@ -141,7 +146,7 @@ namespace Assets.Scripts
                         DeselectCharacter();
                     }
                     break;
-                case TurnState.CHARACTER_ANIMATION:
+                case TurnState.ANIMATION_IN_PROGRESS:
                     break;
             }
         }
@@ -150,12 +155,8 @@ namespace Assets.Scripts
         {
             switch (turnState)
             {
-                case TurnState.USER_IDLE:
-                    break;
                 case TurnState.USER_CHAR_SELECTED:
                     DeselectCharacter();
-                    break;
-                case TurnState.CHARACTER_ANIMATION:
                     break;
             }
         }
@@ -165,38 +166,66 @@ namespace Assets.Scripts
             List<Vector2Int> path = gridNavigator.GetPath(character.GridPosition, targetPosition);
             if (path != null)
             {
-                SetState(TurnState.CHARACTER_ANIMATION);
                 levelService.HideAllBreadCrumbs();
                 movablePlayerCharacters.Remove(character);
+                possibleMoveTargetsCache.Clear();
+                SetState(TurnState.ANIMATION_IN_PROGRESS);
                 character.Move(path).Done(() => SetState(TurnState.USER_CHAR_SELECTED));
             }
+        }
+
+        private void AttackCharacter(EntityComponent attacker, EntityComponent target)
+        {
+            foreach (var entity in levelService.GetEntities())
+            {
+                entity.ShowSelectionAttackTarget(false);
+            }
+            attackingPlayerCharacters.Remove(attacker);
+            possibleAttackTargetsCache.Clear();
+            target.PlayTakeDamageAnimation();
+            target.PlayHealthBarAnimation(0);
         }
 
         private void SelectUserCharacter(EntityComponent selectedCharacter)
         {
             this.selectedCharacter = selectedCharacter;
 
-            //Show HUD selection
+            //Update HUD selection
             foreach (var entity in levelService.GetEntities())
             {
                 entity.ShowSelection(entity == selectedCharacter);
+                entity.ShowSelectionAttackTarget(false);
             }
-            SetState(TurnState.USER_CHAR_SELECTED);
+            levelService.HideAllBreadCrumbs();
 
+            possibleMoveTargetsCache.Clear();
             bool characterCanMove = movablePlayerCharacters.Contains(selectedCharacter);
             if (characterCanMove)
             {
                 //Show walk breadcrumbs & cache possible destinations
-                characterAvailableDestinationsCache.Clear();
-                levelService.HideAllBreadCrumbs();
                 gridNavigator.DoActionOnNeighbours(selectedCharacter.GridPosition, walkDistance, true,
                     (depth, gridPosition) =>
                     {
                         levelService.SetBreadCrumbVisible(gridPosition.x, gridPosition.y, true, .1f * depth);
-                        characterAvailableDestinationsCache.Add(gridPosition);
+                        possibleMoveTargetsCache.Add(gridPosition);
                     });
 
             }
+
+            bool characterCanAttack = attackingPlayerCharacters.Contains(selectedCharacter);
+            if (characterCanAttack)
+            {
+                List<EntityComponent> entitiesInRange = levelService.GetEntitiesInRangeCross(selectedCharacter, 1);
+                foreach (EntityComponent entity in entitiesInRange)
+                {
+                    if (entity.Faction == EntityFaction.Enemy)
+                    {
+                        entity.ShowSelectionAttackTarget(true);
+                        possibleAttackTargetsCache.Add(entity);
+                    }
+                }
+            }
+            SetState(TurnState.USER_CHAR_SELECTED);
         }
 
         private void DeselectCharacter()
@@ -206,6 +235,7 @@ namespace Assets.Scripts
             foreach (var entity in levelService.GetEntities())
             {
                 entity.ShowSelection(false);
+                entity.ShowSelectionAttackTarget(false);
             }
 
             SetState(TurnState.USER_IDLE);

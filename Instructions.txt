@@ -32,8 +32,6 @@ Gameplay rules example (you do not have to follow these, but they can help you t
 - Characters can not pass through tiles with obstacles or other characters.
 - Character movement can be implemented in one of the following ways:
 	- Clicking a character should mark that character as selected and display breadcrumbs for all tiles within walking distance.
-	OR
-	- Clicking and dragging over a character displays a breadcrumbs path from the character tile to the tile at the mouse drag position. Releasing the mouse button triggers the movement.
 - Enemies within attack range should be marked with the attack target selection.
 - Characters have 2 health points.
 - Basic attacks do 1 damage.

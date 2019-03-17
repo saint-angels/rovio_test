@@ -70,6 +70,37 @@ namespace Assets.Scripts.Presentation.Levels
             }
         }
 
+        public List<EntityComponent> GetEntitiesInRangeCross(EntityComponent aroundEntity, int range)
+        {
+            Vector2Int position = aroundEntity.GridPosition;
+
+            List<EntityComponent> entitiesList = new List<EntityComponent>();
+
+            //Check x axis
+            for (int xOffset = -range; xOffset <= range; xOffset++)
+            {
+                Vector2Int offsetPosition = new Vector2Int(position.x + xOffset, position.y);
+                EntityComponent entity = GetEntityAtPosition(offsetPosition.x, offsetPosition.y);
+                if (entity != null && entity != aroundEntity)
+                {
+                    entitiesList.Add(entity);
+                }
+            }
+
+            //Check y axis
+            for (int yOffset = -range; yOffset <= range; yOffset++)
+            {
+                Vector2Int offsetPosition = new Vector2Int(position.x, position.y + yOffset);
+                EntityComponent entity = GetEntityAtPosition(offsetPosition.x, offsetPosition.y);
+                if (entity != null && entity != aroundEntity)
+                {
+                    entitiesList.Add(entity);
+                }
+            }
+
+            return entitiesList;
+        }
+
 		public void LoadLevel(string levelName)
 		{
 			var levelText = Resources.Load<TextAsset>($"Levels/{levelName}").text;
