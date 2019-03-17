@@ -200,7 +200,7 @@ namespace Assets.Scripts.Presentation.Levels
             }
 			LevelData.Entities.Add(entity);
             LevelData.TilesEntities[x, y] = entity;
-            entity.OnMoved += OnEntityMoved;
+            entity.OnMovementFinished += OnEntityMoved;
 		}
 
 		public void SetBreadCrumbVisible(int x, int y, bool isVisible, float delay = 0)
@@ -280,7 +280,7 @@ namespace Assets.Scripts.Presentation.Levels
 			audio.PlayQuake();
 		}
 
-        private void OnEntityMoved(Entity entity, Vector2Int oldPosition, Vector2Int newPosition, int stepIndex)
+        private void OnEntityMoved(Entity entity, Vector2Int oldPosition, Vector2Int newPosition)
         {
             LevelData.TilesEntities[oldPosition.x, oldPosition.y] = null;
             LevelData.TilesEntities[newPosition.x, newPosition.y] = entity;

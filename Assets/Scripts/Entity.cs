@@ -12,7 +12,8 @@ namespace Assets.Scripts
     [SelectionBase]
     public class Entity : MonoBehaviour
     {
-        public event Action<Entity, Vector2Int, Vector2Int, int> OnMoved = (entity, oldPosition, newPosition, stepIndex) => { };
+        public event Action<Vector2Int, int> OnStep = (newPosition, stepIndex) => { };
+        public event Action<Entity, Vector2Int, Vector2Int> OnMovementFinished = (entity, oldPosition, newPosition) => { };
         public event Action<float> OnDamaged = (currentHealthPercentage) => { };
         public event Action<bool> OnSelected = (isSelected) => { };
         public event Action<bool> OnTargeted = (isTargeted) => { };
@@ -64,11 +65,11 @@ namespace Assets.Scripts
             for (int stepIdx = 0; stepIdx < pathDirections.Count; stepIdx++)
             {
                 Vector2Int newPosition = pathDirections[stepIdx];
-                OnMoved(this, oldPosition, newPosition, stepIdx);
-                oldPosition = newPosition;
+                OnStep(newPosition, stepIdx);
             }
 
             GridPosition = pathDirections[pathDirections.Count - 1];
+            OnMovementFinished(this, oldPosition, GridPosition);
             moveDeferred.Resolve();
 
             return moveDeferred;

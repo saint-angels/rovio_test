@@ -34,7 +34,7 @@ namespace Assets.Scripts.Presentation.Entities
             entityOwner.OnDestroyed += OnEntityDestroyed;
             entityOwner.OnSelected += OnEntitySelected;
             entityOwner.OnTargeted += OnEntityTargeted;
-            entityOwner.OnMoved += OnEntityMoved;
+            entityOwner.OnStep += OnEntityStep;
 
             Renderer.sortingOrder = LevelGrid.GetSortingOrder(x, y);
             Renderer.sprite = sprite;
@@ -46,7 +46,7 @@ namespace Assets.Scripts.Presentation.Entities
             }
         }
 
-        private void OnEntityMoved(Entity entityOwner, Vector2Int from, Vector2Int to, int stepIndex)
+        private void OnEntityStep(Vector2Int to, int stepIndex)
         {
             //Vector2 fromPositionWorld = LevelGrid.ToWorldCoordinates(from.x, from.y);
             Vector2 toPositionWorld = LevelGrid.ToWorldCoordinates(to.x, to.y);
