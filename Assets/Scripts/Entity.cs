@@ -12,7 +12,7 @@ namespace Assets.Scripts
     [SelectionBase]
     public class Entity : MonoBehaviour
     {
-        public event Action<Vector2Int, int> OnStep = (newPosition, stepIndex) => { };
+        public event Action<Vector2Int, int, float> OnStep = (newPosition, stepIndex, stepDuration) => { };
         public event Action<Entity, Vector2Int, Vector2Int> OnMovementFinished = (entity, oldPosition, newPosition) => { };
         public event Action<float> OnDamaged = (currentHealthPercentage) => { };
         public event Action<bool> OnSelected = (isSelected) => { };
@@ -29,6 +29,7 @@ namespace Assets.Scripts
 
         private EntityView view;
         private int maxHealth;
+        private float stepDuration;
 
         public void Init(int x, int y, Sprite sprite, EntityType type, EntityFaction faction)
         {
@@ -42,13 +43,14 @@ namespace Assets.Scripts
             transform.position = LevelGrid.ToWorldCoordinates(x, y);
         }
 
-        public void AddCharacterParams(int health, int attackDamge, int walkDistance, int attackRange)
+        public void AddCharacterParams(int health, int attackDamge, int walkDistance, int attackRange, float stepDuration)
         {
             this.AttackRange = attackRange;
             this.AttackDamage = attackDamge;
             this.maxHealth = health;
             this.HealthPoints = health;
             this.MaxWalkDistance = walkDistance;
+            this.stepDuration = stepDuration;
         }
 
         public void SetTargeted(bool isTargeted)
@@ -69,12 +71,12 @@ namespace Assets.Scripts
             for (int stepIdx = 0; stepIdx < pathDirections.Count; stepIdx++)
             {
                 Vector2Int newPosition = pathDirections[stepIdx];
-                OnStep(newPosition, stepIdx);
+                OnStep(newPosition, stepIdx, stepDuration);
             }
 
             GridPosition = pathDirections[pathDirections.Count - 1];
             OnMovementFinished(this, oldPosition, GridPosition);
-            moveDeferred.Resolve();
+            Timers.Instance.Wait(pathDirections.Count * stepDuration).Done(() => moveDeferred.Resolve());
             return moveDeferred;
         }
 

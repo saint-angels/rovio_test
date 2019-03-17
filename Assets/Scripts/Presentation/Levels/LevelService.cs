@@ -31,6 +31,7 @@ namespace Assets.Scripts.Presentation.Levels
         private int defaultCharacterWalkDistance = 6;
         private int defaultCharacterAttackrange = 1;
 
+        private float stepDuration = .2f;
 
 		public LevelService()
 		{
@@ -207,7 +208,7 @@ namespace Assets.Scripts.Presentation.Levels
             entity.Init(x, y, sprite, type, faction);
             if (type == EntityType.Character)
             {
-                entity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance, defaultCharacterAttackrange);
+                entity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance, defaultCharacterAttackrange, stepDuration);
                 entity.OnMovementFinished += OnEntityMoved;
                 entity.OnDestroyed += OnEntityDestroyed;
             }

@@ -19,7 +19,6 @@ namespace Assets.Scripts.Presentation.Entities
 
 		private AudioComponent audio;
         private Entity entityOwner;
-        private const float stepDuration = .2f;
 
 		private void Awake()
 		{
@@ -46,9 +45,8 @@ namespace Assets.Scripts.Presentation.Entities
             }
         }
 
-        private void OnEntityStep(Vector2Int to, int stepIndex)
+        private void OnEntityStep(Vector2Int to, int stepIndex, float stepDuration)
         {
-            //Vector2 fromPositionWorld = LevelGrid.ToWorldCoordinates(from.x, from.y);
             Vector2 toPositionWorld = LevelGrid.ToWorldCoordinates(to.x, to.y);
 
             transform.DOJump(toPositionWorld, 0.25f, 1, stepDuration).SetEase(Ease.InQuint)

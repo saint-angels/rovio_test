@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Presentation.Entities;
 using Assets.Scripts.Presentation.Levels;
+using Assets.Scripts.Promises;
 using Assets.Scripts.UI;
 using Pathfinding;
 using UnityEngine;
@@ -80,6 +81,9 @@ namespace Assets.Scripts
 
         private void StartEnemyTurn()
         {
+            SetState(TurnState.ANIMATION_IN_PROGRESS);
+
+            List<IPromise> enemyTurnPromises = new List<IPromise>();
             var enemies = levelService.GetCharacters(EntityFaction.Enemy);
             foreach (var enemy in enemies)
             {
@@ -91,12 +95,15 @@ namespace Assets.Scripts
                     {
                         List<Vector2Int> path = gridNavigator.GetPath(enemy.GridPosition, closestPlayerCharacter.GridPosition, enemy.MaxWalkDistance);
                         Vector2Int moveTarget = path.Last() == closestPlayerCharacter.GridPosition ? path[path.Count - 2] : path[path.Count - 1];
-                        MoveCharacter(enemy, moveTarget);
-                        EntityTryAttackFractionInRange(enemy, EntityFaction.Player);
+                        IPromise movePromise = MoveCharacter(enemy, moveTarget);
+                        movePromise.Done(() => EntityTryAttackFractionInRange(enemy, EntityFaction.Player));
+                        enemyTurnPromises.Add(movePromise);
                     }
                 }
             }
             CheckForGameOver();
+
+            Deferred.All(enemyTurnPromises).Done(() => StartPlayerTurn());
         }
 
         private bool EntityTryAttackFractionInRange(Entity attacker, EntityFaction enemyFaction)
@@ -112,18 +119,8 @@ namespace Assets.Scripts
 
         private void OnEndTurnClicked()
         {
+            DeselectCharacters();
             StartEnemyTurn();
-
-            switch (turnState)
-            {
-                case TurnState.USER_IDLE:
-                    StartPlayerTurn();
-                    break;
-                case TurnState.USER_CHAR_SELECTED:
-                    DeselectCharacter();
-                    StartPlayerTurn();
-                    break;
-            }
         }
 
         private void OnCharacterClicked(Entity clickedCharacter)
@@ -162,11 +159,12 @@ namespace Assets.Scripts
                 case TurnState.USER_CHAR_SELECTED:
                     if (possibleMoveTargetsCache.Contains(gridPosition))
                     {
-                        MoveCharacter(selectedCharacter, gridPosition);
+                        SetState(TurnState.ANIMATION_IN_PROGRESS);
+                        MoveCharacter(selectedCharacter, gridPosition).Done(() => SetState(TurnState.USER_CHAR_SELECTED));
                     }
                     else
                     {
-                        DeselectCharacter();
+                        DeselectCharacters();
                     }
                     break;
             }
@@ -177,12 +175,12 @@ namespace Assets.Scripts
             switch (turnState)
             {
                 case TurnState.USER_CHAR_SELECTED:
-                    DeselectCharacter();
+                    DeselectCharacters();
                     break;
             }
         }
 
-        private void MoveCharacter(Entity character, Vector2Int targetPosition)
+        private IPromise MoveCharacter(Entity character, Vector2Int targetPosition)
         {
             List<Vector2Int> path = gridNavigator.GetPath(character.GridPosition, targetPosition, character.MaxWalkDistance);
             if (path != null)
@@ -190,8 +188,11 @@ namespace Assets.Scripts
                 levelService.HideAllBreadCrumbs();
                 movablePlayerCharacters.Remove(character);
                 possibleMoveTargetsCache.Clear();
-                SetState(TurnState.ANIMATION_IN_PROGRESS);
-                character.Move(path).Done(() => SetState(TurnState.USER_CHAR_SELECTED));
+                return character.Move(path);
+            }
+            else
+            {
+                return Deferred.GetFromPool().Resolve();
             }
         }
 
@@ -266,7 +267,7 @@ namespace Assets.Scripts
             SetState(TurnState.USER_CHAR_SELECTED);
         }
 
-        private void DeselectCharacter()
+        private void DeselectCharacters()
         {
             selectedCharacter = null;
             levelService.HideAllBreadCrumbs();
