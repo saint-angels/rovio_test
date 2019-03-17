@@ -27,7 +27,6 @@ namespace Assets.Scripts
 		private bool selectionToggle;
 		private bool selectionAttackTargetToggle;
 		private bool bannerToggle;
-        private int walkDistance = 6;
 
         private List<Entity> movablePlayerCharacters = new List<Entity>();
         private List<Entity> attackingPlayerCharacters = new List<Entity>();
@@ -184,6 +183,23 @@ namespace Assets.Scripts
             possibleAttackTargetsCache.Clear();
 
             target.Damage(attacker.AttackDamage);
+
+            CheckForGameOver();
+        }
+
+        private void CheckForGameOver()
+        {
+            var enemyCharacters = levelService.GetCharacters(EntityFaction.Enemy);
+            var playerCharacters = levelService.GetCharacters(EntityFaction.Player);
+
+            if (enemyCharacters.Count == 0)
+            {
+                ui.ShowAndHideBanner("Player wins!");
+            }
+            else if (playerCharacters.Count == 0)
+            {
+                ui.ShowAndHideBanner("AI wins!");
+            }
         }
 
         private void SelectUserCharacter(Entity selectedCharacter)
@@ -203,7 +219,7 @@ namespace Assets.Scripts
             if (characterCanMove)
             {
                 //Show walk breadcrumbs & cache possible destinations
-                gridNavigator.DoActionOnNeighbours(selectedCharacter.GridPosition, walkDistance, true,
+                gridNavigator.DoActionOnNeighbours(selectedCharacter.GridPosition, selectedCharacter.WalkDistance, true,
                     (depth, gridPosition) =>
                     {
                         levelService.SetBreadCrumbVisible(gridPosition.x, gridPosition.y, true, .1f * depth);

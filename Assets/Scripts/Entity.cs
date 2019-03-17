@@ -19,6 +19,7 @@ namespace Assets.Scripts
         public event Action<bool> OnTargeted = (isTargeted) => { };
         public event Action<Entity> OnDestroyed = (entity) => { };
 
+        public int WalkDistance { get; private set; }
         public int AttackDamage { get; private set; }
         public int HealthPoints { get; private set; }
         public EntityType Type { get; private set; }
@@ -40,11 +41,12 @@ namespace Assets.Scripts
             transform.position = LevelGrid.ToWorldCoordinates(x, y);
         }
 
-        public void AddCharacterParams(int health, int attackDamge)
+        public void AddCharacterParams(int health, int attackDamge, int walkDistance)
         {
             this.AttackDamage = attackDamge;
             this.maxHealth = health;
             this.HealthPoints = health;
+            this.WalkDistance = walkDistance;
         }
 
         public void SetTargeted(bool isTargeted)
@@ -71,7 +73,6 @@ namespace Assets.Scripts
             GridPosition = pathDirections[pathDirections.Count - 1];
             OnMovementFinished(this, oldPosition, GridPosition);
             moveDeferred.Resolve();
-
             return moveDeferred;
         }
 

@@ -28,6 +28,7 @@ namespace Assets.Scripts.Presentation.Levels
 
         private int defaultCharacterHealth = 2;
         private int defaultCharacterAttackDamage = 1;
+        private int defaultCharacterWalkDistance = 6;
 
 
 		public LevelService()
@@ -196,11 +197,12 @@ namespace Assets.Scripts.Presentation.Levels
             entity.Init(x, y, sprite, type, faction);
             if (type == EntityType.Character)
             {
-                entity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage);
+                entity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance);
+                entity.OnMovementFinished += OnEntityMoved;
+                entity.OnDestroyed += OnEntityDestroyed;
             }
 			LevelData.Entities.Add(entity);
             LevelData.TilesEntities[x, y] = entity;
-            entity.OnMovementFinished += OnEntityMoved;
 		}
 
 		public void SetBreadCrumbVisible(int x, int y, bool isVisible, float delay = 0)
@@ -279,6 +281,12 @@ namespace Assets.Scripts.Presentation.Levels
 
 			audio.PlayQuake();
 		}
+
+        private void OnEntityDestroyed(Entity entity)
+        {
+            LevelData.Entities.Remove(entity);
+            LevelData.TilesEntities[entity.GridPosition.x, entity.GridPosition.y] = null;
+        }
 
         private void OnEntityMoved(Entity entity, Vector2Int oldPosition, Vector2Int newPosition)
         {
