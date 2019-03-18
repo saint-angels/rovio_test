@@ -102,9 +102,12 @@ namespace Assets.Scripts
                             SelectUserCharacter(clickedCharacter);
                             break;
                         case EntityFaction.Enemy:
-                            if (selectedCharacter.CanAttack(clickedCharacter))
+                            bool characterCanAttack = attackingPlayerCharacters.Contains(selectedCharacter);
+                            if (characterCanAttack && selectedCharacter.CanAttack(clickedCharacter))
                             {
-                                AttackCharacter(selectedCharacter, clickedCharacter);
+                                attackingPlayerCharacters.Remove(selectedCharacter);
+                                selectedCharacter.Attack(clickedCharacter);
+                                CheckForGameOver();
                             }
                             break;
                     }
@@ -139,19 +142,6 @@ namespace Assets.Scripts
             }
         }
 
-        private void AttackCharacter(Entity attacker, Entity target)
-        {
-            foreach (var entity in levelService.GetEntities())
-            {
-                entity.SetTargeted(false);
-            }
-            attackingPlayerCharacters.Remove(attacker);
-
-            attacker.Attack(target);
-
-            CheckForGameOver();
-        }
-
         private void CheckForGameOver()
         {
             var enemyCharacters = levelService.GetCharacters(EntityFaction.Enemy);
@@ -159,11 +149,11 @@ namespace Assets.Scripts
 
             if (enemyCharacters.Count == 0)
             {
-                ui.ShowAndHideBanner("Player wins!");
+                ui.ShowBattleResults(true);
             }
             else if (playerCharacters.Count == 0)
             {
-                ui.ShowAndHideBanner("AI wins!");
+                ui.ShowBattleResults(false);
             }
         }
 
@@ -172,9 +162,9 @@ namespace Assets.Scripts
             this.selectedCharacter = selectedCharacter;
 
             List<Vector2Int> possibleMoveTargets = new List<Vector2Int>();
-            bool characterCanMove = movablePlayerCharacters.Contains(selectedCharacter);
-            bool characterCanAttack = attackingPlayerCharacters.Contains(selectedCharacter);
-            selectedCharacter.Select(characterCanMove, characterCanAttack);
+            bool movementAllowed = movablePlayerCharacters.Contains(selectedCharacter);
+            bool attackAllowed = attackingPlayerCharacters.Contains(selectedCharacter);
+            selectedCharacter.Select(movementAllowed, attackAllowed);
             SetState(TurnState.USER_CHAR_SELECTED);
         }
 	}

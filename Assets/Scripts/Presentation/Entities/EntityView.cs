@@ -93,7 +93,7 @@ namespace Assets.Scripts.Presentation.Entities
         {
             Selection.gameObject.SetActive(isSelected);
 
-			if (isSelected)
+            if (isSelected)
 			{
 			    Selection.gameObject.transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0), 0.5f);
 				audio.PlaySelect();

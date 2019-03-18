@@ -252,11 +252,6 @@ namespace Assets.Scripts.Presentation.Levels
 
         private void OnEntitySelected(Entity selectedEntity, bool isSelected)
         {
-            if (isSelected == false)
-            {
-                HideAllBreadCrumbs();
-            }
-
             foreach (var entity in GetEntities())
             {
                 if (entity != selectedEntity)

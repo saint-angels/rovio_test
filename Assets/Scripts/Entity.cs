@@ -31,8 +31,7 @@ namespace Assets.Scripts
         public int AttackDamage { get; private set; }
         public int HealthPoints { get; private set; }
         public int AttackRange { get; private set; }
-
-        //TODO: move to properties maybe
+    
         public List<Vector2Int> possibleMoveTargets = new List<Vector2Int>();
         public List<Entity> possibleAttackTargets = new List<Entity>();
 
@@ -86,11 +85,6 @@ namespace Assets.Scripts
             OnTargeted(isTargeted);
         }
 
-        public void SetSelected(bool isSelected)
-        {
-            OnSelected(this, isSelected);
-        }
-
         public IPromise Move(Vector2Int target)
         {
             List<Vector2Int> path = gridNavigator.GetPath(this, target, MaxWalkDistance);
@@ -120,12 +114,12 @@ namespace Assets.Scripts
             }
         }
 
-        public void Select(bool canMove, bool canAttack)
+        public void Select(bool movementAllowed, bool attackAllowed)
         {
             this.possibleMoveTargets.Clear();
             this.possibleAttackTargets.Clear();
 
-            if (canMove)
+            if (movementAllowed)
             {
                 gridNavigator.DoActionOnNeighbours(GridPosition, MaxWalkDistance, true,
                     (depth, gridPosition) =>
@@ -134,7 +128,7 @@ namespace Assets.Scripts
                     });
             }
 
-            if (canAttack)
+            if (attackAllowed)
             {
                 EntityFaction opposingFaction = Faction == EntityFaction.Player ? EntityFaction.Enemy : EntityFaction.Player;
                 List <Entity> entitiesInRange = levelService.GetEntitiesInRange(this, opposingFaction);
@@ -145,17 +139,6 @@ namespace Assets.Scripts
                 }
             }
             OnSelected(this, true);
-        }
-
-        public bool TryAttackFractionInRange(EntityFaction targetFaction)
-        {
-            List<Entity> entitiesInRange = levelService.GetEntitiesInRange(this, targetFaction);
-            if (entitiesInRange.Count > 0)
-            {
-                Attack(entitiesInRange[0]);
-                return true;
-            }
-            return false;
         }
 
         public bool CanAttack(Entity entity)
@@ -184,6 +167,17 @@ namespace Assets.Scripts
         public bool CanMove(Vector2Int position)
         {
             return possibleMoveTargets.Contains(position);
+        }
+
+        private bool TryAttackFractionInRange(EntityFaction targetFaction)
+        {
+            List<Entity> entitiesInRange = levelService.GetEntitiesInRange(this, targetFaction);
+            if (entitiesInRange.Count > 0)
+            {
+                Attack(entitiesInRange[0]);
+                return true;
+            }
+            return false;
         }
     }
 }

@@ -24,7 +24,19 @@ namespace Assets.Scripts.UI
             buttonEndTurn.onClick.AddListener(() => OnEndTurnClicked());
         }
 
-        public void ShowAndHideBanner(string text, float showDelay = 0, float hideDelay = 2)
+        public void ShowBattleResults(bool playerWon)
+        {
+            if (playerWon)
+            {
+                ShowAndHideBanner("Player wins!");
+            }
+            else
+            {
+                ShowAndHideBanner("AI wins!");
+            }
+        }
+
+        private void ShowAndHideBanner(string text, float showDelay = 0, float hideDelay = 2)
 		{
 			ShowBanner(text, showDelay);
 			HideBanner(showDelay + hideDelay);
