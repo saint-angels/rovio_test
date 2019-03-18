@@ -43,6 +43,7 @@ namespace Assets.Scripts.Presentation.Entities
                 HealthBar.SetActive(true);
                 HealthBar.transform.localScale = Vector3.one;
             }
+            transform.position = LevelGrid.ToWorldCoordinates(x, y);
         }
 
         private void OnEntityStep(Vector2Int to, int stepIndex, float stepDuration)

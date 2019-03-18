@@ -38,7 +38,7 @@ namespace Assets.Scripts
 		{
 			// Load the level
 			levelService = new LevelService();
-			levelService.LoadLevel("Level1");
+			levelService.LoadLevel("Level2");
 
 			ui = GameObject.Find("Canvas").GetComponent<UIComponent>();
             ui.OnEndTurnClicked += OnEndTurnClicked;
@@ -93,7 +93,7 @@ namespace Assets.Scripts
                     Entity closestPlayerCharacter = levelService.GetClosestCharacter(enemy.GridPosition, EntityFaction.Player);
                     if (closestPlayerCharacter != null)
                     {
-                        List<Vector2Int> path = gridNavigator.GetPath(enemy.GridPosition, closestPlayerCharacter.GridPosition, enemy.MaxWalkDistance);
+                        List<Vector2Int> path = gridNavigator.GetPath(enemy, closestPlayerCharacter.GridPosition, enemy.MaxWalkDistance, closestPlayerCharacter);
                         Vector2Int moveTarget = path.Last() == closestPlayerCharacter.GridPosition ? path[path.Count - 2] : path[path.Count - 1];
                         IPromise movePromise = MoveCharacter(enemy, moveTarget);
                         movePromise.Done(() => EntityTryAttackFractionInRange(enemy, EntityFaction.Player));
@@ -182,7 +182,7 @@ namespace Assets.Scripts
 
         private IPromise MoveCharacter(Entity character, Vector2Int targetPosition)
         {
-            List<Vector2Int> path = gridNavigator.GetPath(character.GridPosition, targetPosition, character.MaxWalkDistance);
+            List<Vector2Int> path = gridNavigator.GetPath(character, targetPosition, character.MaxWalkDistance);
             if (path != null)
             {
                 levelService.HideAllBreadCrumbs();

@@ -33,14 +33,12 @@ namespace Assets.Scripts
 
         public void Init(int x, int y, Sprite sprite, EntityType type, EntityFaction faction)
         {
-            view = GetComponent<EntityView>() ?? gameObject.AddComponent<EntityView>();
-            view.Init(this, sprite, type, x, y);
-
             GridPosition = new Vector2Int(x, y);
             Type = type;
             Faction = faction;
+            view = GetComponent<EntityView>() ?? gameObject.AddComponent<EntityView>();
+            view.Init(this, sprite, type, x, y);
 
-            transform.position = LevelGrid.ToWorldCoordinates(x, y);
         }
 
         public void AddCharacterParams(int health, int attackDamge, int walkDistance, int attackRange, float stepDuration)
@@ -73,10 +71,14 @@ namespace Assets.Scripts
                 Vector2Int newPosition = pathDirections[stepIdx];
                 OnStep(newPosition, stepIdx, stepDuration);
             }
-
-            GridPosition = pathDirections[pathDirections.Count - 1];
-            OnMovementFinished(this, oldPosition, GridPosition);
-            Timers.Instance.Wait(pathDirections.Count * stepDuration).Done(() => moveDeferred.Resolve());
+            
+            Timers.Instance.Wait(pathDirections.Count * stepDuration)
+                .Done(() =>
+                    {
+                        GridPosition = pathDirections[pathDirections.Count - 1];
+                        OnMovementFinished(this, oldPosition, GridPosition);
+                        moveDeferred.Resolve();
+                    });
             return moveDeferred;
         }
 

@@ -48,10 +48,21 @@ namespace Assets.Scripts.Presentation.Levels
 			audio = GameObject.Find("Audio").GetComponent<AudioComponent>();
 		}
 
-        public List<Entity> GetCharacters(EntityFaction faction)
+        public List<Entity> GetCharacters(EntityFaction? filterFaction = null)
         {
-            return LevelData.Entities.Where(p => p.Type == EntityType.Character && p.Faction == faction).ToList();
-        }
+            return LevelData.Entities
+                .Where(e =>
+                    {
+                        bool factionCheck = true;
+                        if (filterFaction.HasValue)
+                        {
+                            factionCheck = filterFaction.Value == e.Faction;
+                        }
+                        bool typeCheck = e.Type == EntityType.Character;
+                        return factionCheck && typeCheck;
+                    })
+                .ToList();
+        } 
 
         public Entity GetClosestCharacter(Vector2Int targetPosition, EntityFaction faction)
         {

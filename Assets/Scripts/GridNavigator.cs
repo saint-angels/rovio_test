@@ -4,6 +4,7 @@ using Pathfinding;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -11,15 +12,40 @@ namespace Assets.Scripts
     public class GridNavigator : MonoBehaviour
     {
         private LevelService levelService;
+        private BlockManager blockManager;
+        private Dictionary<Entity, SingleNodeBlocker> characterNodeBlockers = new Dictionary<Entity, SingleNodeBlocker>(); //TODO: Clear on char death
 
         public void Init(LevelService levelService)
         {
             this.levelService = levelService;
+
+            blockManager = GetComponent<BlockManager>() ?? gameObject.AddComponent<BlockManager>();
+
+
             //Init graph
             var graph = AstarPath.active.data.pointGraph;
             graph.limits = new Vector3(LevelGrid.TileSize.x, LevelGrid.TileSize.y);
             graph.Scan();
 
+            foreach (var character in levelService.GetCharacters())
+            {
+                var nodeBlocker = character.gameObject.AddComponent<SingleNodeBlocker>();
+                nodeBlocker.manager = blockManager;
+                characterNodeBlockers.Add(character, nodeBlocker);
+                nodeBlocker.BlockAtCurrentPosition();
+
+                character.OnMovementFinished += (entity, from, to) =>
+                    {
+                        characterNodeBlockers[entity].BlockAtCurrentPosition();
+                    };
+                character.OnDestroyed += (entity) =>
+                    {
+                        characterNodeBlockers[entity].Unblock();
+                        characterNodeBlockers.Remove(entity);
+                    };
+            }
+
+            //Block nodes with obstacles
             foreach (var node in graph.nodes)
             {
                 Vector3 nodeWorldPosition = (Vector3)node.position;
@@ -32,18 +58,26 @@ namespace Assets.Scripts
             }
         }
 
-        public List<Vector2Int> GetPath(Vector2Int from, Vector2Int to, int maxSteps)
+        public List<Vector2Int> GetPath(Entity entity, Vector2Int to, int maxSteps, Entity passableBlockingEntity = null)
         {
-            Vector2 fromWorldPosition = LevelGrid.ToWorldCoordinates(from);
+            Vector2 fromWorldPosition = LevelGrid.ToWorldCoordinates(entity.GridPosition);
             Vector2 toWorldPosition = LevelGrid.ToWorldCoordinates(to);
 
             var path = ABPath.Construct(fromWorldPosition, toWorldPosition, null);
+
+            var passableBlockers = new List<SingleNodeBlocker> { characterNodeBlockers[entity] };
+            if (passableBlockingEntity != null)
+            {
+                passableBlockers.Add(characterNodeBlockers[passableBlockingEntity]);
+            }
+            var traversalProvider = new BlockManager.TraversalProvider(blockManager, BlockManager.BlockMode.AllExceptSelector, passableBlockers);
+            path.traversalProvider = traversalProvider;
             AstarPath.StartPath(path);
             path.BlockUntilCalculated();
 
             if (path.error)
             {
-                Debug.LogErrorFormat("No path was found from:{0} to:{1}", from, to);
+                Debug.LogErrorFormat("No path was found from:{0} to:{1}", entity.GridPosition, to);
                 return null;
             }
             else
