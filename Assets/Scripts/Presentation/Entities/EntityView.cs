@@ -77,7 +77,7 @@ namespace Assets.Scripts.Presentation.Entities
             HealthBar.transform.DOScaleX(clampedHealthPercentage, 0.25f);
         }
 
-        private void OnEntitySelected(bool isSelected)
+        private void OnEntitySelected(Entity selectedEntity, bool isSelected)
         {
             Selection.gameObject.SetActive(isSelected);
 			Selection.gameObject.transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0), 0.5f);

@@ -234,11 +234,10 @@ namespace Assets.Scripts
         {
             this.selectedCharacter = selectedCharacter;
 
-            //Update HUD selection
             foreach (var entity in levelService.GetEntities())
             {
-                entity.SetSelected(entity == selectedCharacter);
                 entity.SetTargeted(false);
+                entity.SetSelected(entity == selectedCharacter);
             }
 
             possibleMoveTargetsCache.Clear();

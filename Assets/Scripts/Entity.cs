@@ -15,7 +15,7 @@ namespace Assets.Scripts
         public event Action<Vector2Int, int, float> OnStep = (newPosition, stepIndex, stepDuration) => { };
         public event Action<Entity, Vector2Int, Vector2Int> OnMovementFinished = (entity, oldPosition, newPosition) => { };
         public event Action<float> OnDamaged = (currentHealthPercentage) => { };
-        public event Action<bool> OnSelected = (isSelected) => { };
+        public event Action<Entity, bool> OnSelected = (entity, isSelected) => { };
         public event Action<bool> OnTargeted = (isTargeted) => { };
         public event Action<Entity> OnDestroyed = (entity) => { };
 
@@ -60,7 +60,7 @@ namespace Assets.Scripts
 
         public void SetSelected(bool isSelected)
         {
-            OnSelected(isSelected);
+            OnSelected(this, isSelected);
         }
 
         public IPromise Move(List<Vector2Int> pathDirections)

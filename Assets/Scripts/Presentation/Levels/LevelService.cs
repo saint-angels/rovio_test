@@ -214,28 +214,30 @@ namespace Assets.Scripts.Presentation.Levels
 
 		private void InstantiateEntity(int x, int y, Sprite sprite, EntityType type, EntityFaction faction)
 		{
-            Entity entity = GameObject.Instantiate(entityPrefab, Vector3.zero, Quaternion.identity, entitiesContainer);
-            entity.name = type.ToString();
-            entity.Init(x, y, sprite, type, faction);
+            Entity newEntity = GameObject.Instantiate(entityPrefab, Vector3.zero, Quaternion.identity, entitiesContainer);
+            newEntity.name = type.ToString();
+            newEntity.Init(x, y, sprite, type, faction);
             if (type == EntityType.Character)
             {
-                entity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance, defaultCharacterAttackrange, stepDuration);
-                entity.OnMovementFinished += OnEntityMoved;
-                entity.OnDestroyed += OnEntityDestroyed;
-                entity.OnSelected += (isSelected) =>
-                {
-                    //TODO: Optimize by hiding breadcrumbs only when current entity is deselcted
-                    if (isSelected == false)
-                    {
-                        HideAllBreadCrumbs();
-                    }
-                };
+                newEntity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance, defaultCharacterAttackrange, stepDuration);
+                newEntity.OnMovementFinished += OnEntityMoved;
+                newEntity.OnDestroyed += OnEntityDestroyed;
+                newEntity.OnSelected += OnEntitySelected;
             }
-			LevelData.Entities.Add(entity);
-            LevelData.TilesEntities[x, y] = entity;
+			LevelData.Entities.Add(newEntity);
+            LevelData.TilesEntities[x, y] = newEntity;
 		}
 
-		public void SetBreadCrumbVisible(int x, int y, bool isVisible, float delay = 0)
+        private void OnEntitySelected(Entity selectedEntity, bool isSelected)
+        {
+            //TODO: Optimize by hiding breadcrumbs only when current entity is deselcted
+            if (isSelected == false)
+            {
+                HideAllBreadCrumbs();
+            }
+        }
+
+        public void SetBreadCrumbVisible(int x, int y, bool isVisible, float delay = 0)
 		{
 			LevelData.Tiles[x, y].SetBreadCrumbVisible(isVisible, delay);
 		}
