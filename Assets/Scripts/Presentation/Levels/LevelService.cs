@@ -216,7 +216,7 @@ namespace Assets.Scripts.Presentation.Levels
 		{
             Entity newEntity = GameObject.Instantiate(entityPrefab, Vector3.zero, Quaternion.identity, entitiesContainer);
             newEntity.name = type.ToString();
-            newEntity.Init(x, y, sprite, type, faction);
+            newEntity.Init(x, y, sprite, type, faction, this);
             if (type == EntityType.Character)
             {
                 newEntity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance, defaultCharacterAttackrange, stepDuration);
@@ -230,10 +230,17 @@ namespace Assets.Scripts.Presentation.Levels
 
         private void OnEntitySelected(Entity selectedEntity, bool isSelected)
         {
-            //TODO: Optimize by hiding breadcrumbs only when current entity is deselcted
             if (isSelected == false)
             {
                 HideAllBreadCrumbs();
+            }
+
+            foreach (var e in GetEntities())
+            {
+                if (e != selectedEntity)
+                {
+                    e.EntityView.Deselect();
+                }
             }
         }
 

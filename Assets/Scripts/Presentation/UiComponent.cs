@@ -18,6 +18,7 @@ namespace Assets.Scripts.UI
 
 		private void Awake()
 		{
+
 			Overlay.color = new Color(0, 0, 0, 0);
 			Banner.gameObject.SetActive(false);
             buttonEndTurn.onClick.AddListener(() => OnEndTurnClicked());

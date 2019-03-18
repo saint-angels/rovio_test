@@ -19,16 +19,18 @@ namespace Assets.Scripts.Presentation.Entities
 
 		private AudioComponent audio;
         private Entity entityOwner;
+        private LevelService levelService;
 
-		private void Awake()
+        private void Awake()
 		{
 			audio = GameObject.Find("Audio").GetComponent<AudioComponent>();
 		}
 
-        public void Init(Entity entityOwner, Sprite sprite, EntityType type, int x, int y)
+        public void Init(Entity entityOwner, Sprite sprite, EntityType type, int x, int y, LevelService levelService)
         {
+            this.levelService = levelService;
             this.entityOwner = entityOwner;
-
+            
             entityOwner.OnDamaged += OnEntityDamaged;
             entityOwner.OnDestroyed += OnEntityDestroyed;
             entityOwner.OnSelected += OnEntitySelected;
@@ -44,6 +46,11 @@ namespace Assets.Scripts.Presentation.Entities
                 HealthBar.transform.localScale = Vector3.one;
             }
             transform.position = LevelGrid.ToWorldCoordinates(x, y);
+        }
+
+        public void Deselect()
+        {
+            OnEntitySelected(entityOwner, false);
         }
 
         private void OnEntityStep(Vector2Int to, int stepIndex, float stepDuration)
@@ -80,13 +87,17 @@ namespace Assets.Scripts.Presentation.Entities
         private void OnEntitySelected(Entity selectedEntity, bool isSelected)
         {
             Selection.gameObject.SetActive(isSelected);
-			Selection.gameObject.transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0), 0.5f);
 
 			if (isSelected)
 			{
+			    Selection.gameObject.transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0), 0.5f);
 				audio.PlaySelect();
+                foreach (var moveTargetPosition in selectedEntity.possibleMoveTargets)
+                {
+                    levelService.SetBreadCrumbVisible(moveTargetPosition.x, moveTargetPosition.y, true);
+                }
 			}
-		}
+        }
 
 		private void OnEntityTargeted(bool state)
 		{

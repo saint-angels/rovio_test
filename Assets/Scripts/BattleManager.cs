@@ -30,10 +30,6 @@ namespace Assets.Scripts
 
         private TurnState turnState;
 
-        //Currently selected character move/attack targets cache
-        private List<Vector2Int> possibleMoveTargetsCache = new List<Vector2Int>();
-        private List<Entity> possibleAttackTargetsCache = new List<Entity>();
-
         private void Start()
 		{
 			// Load the level
@@ -95,7 +91,7 @@ namespace Assets.Scripts
                     {
                         List<Vector2Int> path = gridNavigator.GetPath(enemy, closestPlayerCharacter.GridPosition, enemy.MaxWalkDistance, closestPlayerCharacter);
                         Vector2Int moveTarget = path.Last() == closestPlayerCharacter.GridPosition ? path[path.Count - 2] : path[path.Count - 1];
-                        IPromise movePromise = MoveCharacter(enemy, moveTarget);
+                        IPromise movePromise = enemy.Move(gridNavigator, moveTarget);
                         movePromise.Done(() => EntityTryAttackFractionInRange(enemy, EntityFaction.Player));
                         enemyTurnPromises.Add(movePromise);
                     }
@@ -140,7 +136,7 @@ namespace Assets.Scripts
                             SelectUserCharacter(clickedCharacter);
                             break;
                         case EntityFaction.Enemy:
-                            if (possibleAttackTargetsCache.Contains(clickedCharacter))
+                            if (selectedCharacter.CanAttack(clickedCharacter))
                             {
                                 AttackCharacter(selectedCharacter, clickedCharacter);
                             }
@@ -157,12 +153,12 @@ namespace Assets.Scripts
                 case TurnState.USER_IDLE:
                     break;
                 case TurnState.USER_CHAR_SELECTED:
-                    if (possibleMoveTargetsCache.Contains(gridPosition))
+                    if (selectedCharacter.CanMove(gridPosition))
                     {
                         SetState(TurnState.ANIMATION_IN_PROGRESS);
                         var movingCharacter = selectedCharacter;
                         DeselectCharacters();
-                        MoveCharacter(movingCharacter, gridPosition)
+                        movingCharacter.Move(gridNavigator, gridPosition)
                             .Done(() =>
                             {
                                 movablePlayerCharacters.Remove(movingCharacter);
@@ -187,20 +183,6 @@ namespace Assets.Scripts
             }
         }
 
-        private IPromise MoveCharacter(Entity character, Vector2Int targetPosition)
-        {
-            List<Vector2Int> path = gridNavigator.GetPath(character, targetPosition, character.MaxWalkDistance);
-            if (path != null)
-            {
-                possibleMoveTargetsCache.Clear();
-                return character.Move(path);
-            }
-            else
-            {
-                return Deferred.GetFromPool().Resolve();
-            }
-        }
-
         private void AttackCharacter(Entity attacker, Entity target)
         {
             foreach (var entity in levelService.GetEntities())
@@ -208,9 +190,8 @@ namespace Assets.Scripts
                 entity.SetTargeted(false);
             }
             attackingPlayerCharacters.Remove(attacker);
-            possibleAttackTargetsCache.Clear();
 
-            target.Damage(attacker.AttackDamage);
+            attacker.Attack(target);
 
             CheckForGameOver();
         }
@@ -234,39 +215,20 @@ namespace Assets.Scripts
         {
             this.selectedCharacter = selectedCharacter;
 
-            foreach (var entity in levelService.GetEntities())
-            {
-                entity.SetTargeted(false);
-                entity.SetSelected(entity == selectedCharacter);
-            }
-
-            possibleMoveTargetsCache.Clear();
+            List<Vector2Int> possibleMoveTargets = new List<Vector2Int>();
             bool characterCanMove = movablePlayerCharacters.Contains(selectedCharacter);
             if (characterCanMove)
             {
-                //Show walk breadcrumbs & cache possible destinations
                 gridNavigator.DoActionOnNeighbours(selectedCharacter.GridPosition, selectedCharacter.MaxWalkDistance, true,
                     (depth, gridPosition) =>
                     {
-                        levelService.SetBreadCrumbVisible(gridPosition.x, gridPosition.y, true, .1f * depth);
-                        possibleMoveTargetsCache.Add(gridPosition);
+                        possibleMoveTargets.Add(gridPosition);
                     });
-
             }
-
             bool characterCanAttack = attackingPlayerCharacters.Contains(selectedCharacter);
-            if (characterCanAttack)
-            {
-                List<Entity> entitiesInRange = levelService.GetEntitiesInRange(selectedCharacter, EntityFaction.Enemy);
-                foreach (Entity entity in entitiesInRange)
-                {
-                    if (entity.Faction == EntityFaction.Enemy)
-                    {
-                        entity.SetTargeted(true);
-                        possibleAttackTargetsCache.Add(entity);
-                    }
-                }
-            }
+
+            selectedCharacter.Select(possibleMoveTargets, characterCanAttack);
+
             SetState(TurnState.USER_CHAR_SELECTED);
         }
 
