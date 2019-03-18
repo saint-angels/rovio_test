@@ -19,13 +19,15 @@ namespace Assets.Scripts
         public event Action<bool> OnTargeted = (isTargeted) => { };
         public event Action<Entity> OnDestroyed = (entity) => { };
 
+        public EntityType Type { get; private set; }
+        public EntityFaction Faction { get; private set; }
+        public Vector2Int GridPosition { get; private set; }
+
+        //TODO: Move to additional components
         public int MaxWalkDistance { get; private set; }
         public int AttackDamage { get; private set; }
         public int HealthPoints { get; private set; }
         public int AttackRange { get; private set; }
-        public EntityType Type { get; private set; }
-        public EntityFaction Faction { get; private set; }
-        public Vector2Int GridPosition { get; private set; }
 
         private EntityView view;
         private int maxHealth;

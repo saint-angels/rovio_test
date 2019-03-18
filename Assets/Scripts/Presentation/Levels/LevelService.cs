@@ -222,6 +222,14 @@ namespace Assets.Scripts.Presentation.Levels
                 entity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance, defaultCharacterAttackrange, stepDuration);
                 entity.OnMovementFinished += OnEntityMoved;
                 entity.OnDestroyed += OnEntityDestroyed;
+                entity.OnSelected += (isSelected) =>
+                {
+                    //TODO: Optimize by hiding breadcrumbs only when current entity is deselcted
+                    if (isSelected == false)
+                    {
+                        HideAllBreadCrumbs();
+                    }
+                };
             }
 			LevelData.Entities.Add(entity);
             LevelData.TilesEntities[x, y] = entity;

@@ -160,7 +160,14 @@ namespace Assets.Scripts
                     if (possibleMoveTargetsCache.Contains(gridPosition))
                     {
                         SetState(TurnState.ANIMATION_IN_PROGRESS);
-                        MoveCharacter(selectedCharacter, gridPosition).Done(() => SetState(TurnState.USER_CHAR_SELECTED));
+                        var movingCharacter = selectedCharacter;
+                        DeselectCharacters();
+                        MoveCharacter(movingCharacter, gridPosition)
+                            .Done(() =>
+                            {
+                                movablePlayerCharacters.Remove(movingCharacter);
+                                SelectUserCharacter(movingCharacter);
+                            });
                     }
                     else
                     {
@@ -185,8 +192,6 @@ namespace Assets.Scripts
             List<Vector2Int> path = gridNavigator.GetPath(character, targetPosition, character.MaxWalkDistance);
             if (path != null)
             {
-                levelService.HideAllBreadCrumbs();
-                movablePlayerCharacters.Remove(character);
                 possibleMoveTargetsCache.Clear();
                 return character.Move(path);
             }
@@ -235,7 +240,6 @@ namespace Assets.Scripts
                 entity.SetSelected(entity == selectedCharacter);
                 entity.SetTargeted(false);
             }
-            levelService.HideAllBreadCrumbs();
 
             possibleMoveTargetsCache.Clear();
             bool characterCanMove = movablePlayerCharacters.Contains(selectedCharacter);
@@ -270,7 +274,6 @@ namespace Assets.Scripts
         private void DeselectCharacters()
         {
             selectedCharacter = null;
-            levelService.HideAllBreadCrumbs();
             foreach (var entity in levelService.GetEntities())
             {
                 entity.SetSelected(false);
@@ -278,70 +281,6 @@ namespace Assets.Scripts
             }
 
             SetState(TurnState.USER_IDLE);
-        }
-
-        private void Update()
-		{
-            Demo();
-        }
-
-        private void Demo()
-        {
-            //// This is how you can trigger a quake animation :)
-            //if (Input.GetKeyDown(KeyCode.Q))
-            //{
-            //    var x = Random.Range(0, levelService.LevelData.Width);
-            //    var y = Random.Range(0, levelService.LevelData.Height);
-            //    var radius = Random.Range(2, 8);
-            //    levelService.PlayQuakeAnimation(x, y, radius);
-            //}
-
-            //// And this is how you trigger a damage animation
-            //if (Input.GetKeyDown(KeyCode.A))
-            //{
-            //    enemies[0].PlayTakeDamageAnimation();
-            //}
-
-            //// This is how you alter the healthbar for an entity
-            //if (Input.GetKeyDown(KeyCode.H))
-            //{
-            //    enemies[0].PlayHealthBarAnimation(Random.Range(0f, 1f));
-            //}
-
-            //// How to select a character
-            //if (Input.GetKeyDown(KeyCode.S))
-            //{
-            //    selectionToggle = !selectionToggle;
-            //    enemies[0].ShowSelection(selectionToggle);
-            //}
-
-            //// How to select a character (as an attack target)
-            //if (Input.GetKeyDown(KeyCode.X))
-            //{
-            //    selectionAttackTargetToggle = !selectionAttackTargetToggle;
-            //    enemies[0].OnEntityTargeted(selectionAttackTargetToggle);
-            //}
-
-            //// How to kill a character
-            //if (Input.GetKeyDown(KeyCode.D))
-            //{
-            //    enemies[0].OnEntityDestroyed();
-            //}
-
-            //// How to show a breadcrumbs path
-            //if (Input.GetKeyDown(KeyCode.B))
-            //{
-            //    levelService.SetBreadCrumbVisible(5, 1, true);
-            //    levelService.SetBreadCrumbVisible(5, 2, true, 0.1f);
-            //    levelService.SetBreadCrumbVisible(5, 3, true, 0.2f);
-            //    levelService.SetBreadCrumbVisible(5, 4, true, 0.3f);
-            //    levelService.SetBreadCrumbVisible(4, 4, true, 0.4f);
-            //}
-            //// And how to hide it...
-            //else if (Input.GetKeyDown(KeyCode.V))
-            //{
-            //    levelService.HideAllBreadCrumbs();
-            //}
         }
 	}
 }
