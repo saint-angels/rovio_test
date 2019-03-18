@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace Assets.Scripts.UI
 {
-	public class UIComponent : MonoBehaviour
+	public class BattleHUD : MonoBehaviour
 	{
         public event Action OnEndTurnClicked = () => { };
 

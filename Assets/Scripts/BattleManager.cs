@@ -22,7 +22,7 @@ namespace Assets.Scripts
         public Action OnPlayerTurnEnded = () => { };
 
 		private LevelService levelService;
-		private UIComponent ui;
+		private BattleHUD ui;
         private InputSystem inputSystem;
 
         private Entity selectedCharacter;
@@ -38,7 +38,7 @@ namespace Assets.Scripts
             GridNavigator gridNavigator = GetComponent<GridNavigator>() ?? gameObject.AddComponent<GridNavigator>();
 			levelService.Init("Level2", this, gridNavigator);
 
-			ui = GameObject.Find("Canvas").GetComponent<UIComponent>();
+			ui = GameObject.Find("Canvas").GetComponent<BattleHUD>();
             ui.OnEndTurnClicked += OnEndTurnClicked;
 
             inputSystem = GetComponent<InputSystem>() ?? gameObject.AddComponent<InputSystem>();
