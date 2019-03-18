@@ -11,3 +11,4 @@ All characters are now one entity type and differentiate by faction.
 Things that could be improved:
 - Entities inheritance/interfaces to force only allowed interactions
 - Extract constants that impact visual feel into settings(probably a sriptable object) 
+- Entity waiting for entity view animations -> commands player

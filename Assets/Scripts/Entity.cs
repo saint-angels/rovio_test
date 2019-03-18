@@ -5,6 +5,7 @@ using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -14,6 +15,7 @@ namespace Assets.Scripts
     {
         public event Action<Vector2Int, int, float> OnStep = (newPosition, stepIndex, stepDuration) => { };
         public event Action<Entity, Vector2Int, Vector2Int> OnMovementFinished = (entity, oldPosition, newPosition) => { };
+        public event Action OnAttack = () => { };
         public event Action<float> OnDamaged = (currentHealthPercentage) => { };
         public event Action<Entity, bool> OnSelected = (entity, isSelected) => { };
         public event Action<bool> OnTargeted = (isTargeted) => { };
@@ -37,15 +39,17 @@ namespace Assets.Scripts
         private int maxHealth;
         private float stepDuration;
         private LevelService levelService;
+        private GridNavigator gridNavigator;
 
-        public void Init(int x, int y, Sprite sprite, EntityType type, EntityFaction faction, LevelService levelService)
+        public void Init(Vector2Int gridPosition, GridNavigator gridNavigator, Sprite sprite, EntityType type, EntityFaction faction, LevelService levelService)
         {
             this.levelService = levelService;
-            GridPosition = new Vector2Int(x, y);
+            this.gridNavigator = gridNavigator;
+            GridPosition = gridPosition;
             Type = type;
             Faction = faction;
             EntityView = GetComponent<EntityView>() ?? gameObject.AddComponent<EntityView>();
-            EntityView.Init(this, sprite, type, x, y, levelService);
+            EntityView.Init(this, sprite, type, gridPosition, levelService);
         }
 
         public void AddCharacterParams(int health, int attackDamge, int walkDistance, int attackRange, float stepDuration)
@@ -58,6 +62,25 @@ namespace Assets.Scripts
             this.stepDuration = stepDuration;
         }
 
+        public IPromise MakeAITurn()
+        {
+            EntityFaction opposingFaction = Faction == EntityFaction.Player ? EntityFaction.Enemy : EntityFaction.Player;
+            bool attackSuccess = TryAttackFractionInRange(opposingFaction);
+            if (attackSuccess == false)
+            {
+                Entity closestPlayerCharacter = levelService.GetClosestCharacter(GridPosition, opposingFaction);
+                if (closestPlayerCharacter != null)
+                {
+                    List<Vector2Int> path = gridNavigator.GetPath(this, closestPlayerCharacter.GridPosition, MaxWalkDistance, closestPlayerCharacter);
+                    Vector2Int moveTarget = path.Last() == closestPlayerCharacter.GridPosition ? path[path.Count - 2] : path[path.Count - 1];
+                    IPromise movePromise = Move(moveTarget);
+                    movePromise.Done(() => TryAttackFractionInRange(opposingFaction));
+                    return movePromise;
+                }
+            }
+            return Deferred.GetFromPool().Resolve();
+        }
+
         public void SetTargeted(bool isTargeted)
         {
             OnTargeted(isTargeted);
@@ -68,7 +91,7 @@ namespace Assets.Scripts
             OnSelected(this, isSelected);
         }
 
-        public IPromise Move(GridNavigator gridNavigator, Vector2Int target)
+        public IPromise Move(Vector2Int target)
         {
             List<Vector2Int> path = gridNavigator.GetPath(this, target, MaxWalkDistance);
             if (path != null)
@@ -97,10 +120,19 @@ namespace Assets.Scripts
             }
         }
 
-        public void Select(List<Vector2Int> possibleMoveTargets, bool canAttack)
+        public void Select(bool canMove, bool canAttack)
         {
-            this.possibleMoveTargets = possibleMoveTargets;
+            this.possibleMoveTargets.Clear();
             this.possibleAttackTargets.Clear();
+
+            if (canMove)
+            {
+                gridNavigator.DoActionOnNeighbours(GridPosition, MaxWalkDistance, true,
+                    (depth, gridPosition) =>
+                    {
+                        possibleMoveTargets.Add(gridPosition);
+                    });
+            }
 
             if (canAttack)
             {
@@ -113,6 +145,17 @@ namespace Assets.Scripts
                 }
             }
             OnSelected(this, true);
+        }
+
+        public bool TryAttackFractionInRange(EntityFaction targetFaction)
+        {
+            List<Entity> entitiesInRange = levelService.GetEntitiesInRange(this, targetFaction);
+            if (entitiesInRange.Count > 0)
+            {
+                Attack(entitiesInRange[0]);
+                return true;
+            }
+            return false;
         }
 
         public bool CanAttack(Entity entity)
@@ -134,6 +177,7 @@ namespace Assets.Scripts
 
         public void Attack(Entity target)
         {
+            OnAttack();
             target.Damage(AttackDamage);
         }
 

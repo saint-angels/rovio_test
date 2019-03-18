@@ -31,6 +31,9 @@ namespace Assets.Scripts.Presentation.Levels
         private int defaultCharacterWalkDistance = 6;
         private int defaultCharacterAttackrange = 1;
 
+        private BattleManager battlemanager;
+        private GridNavigator gridNavigator;
+
         private float stepDuration = .2f;
 
 		public LevelService()
@@ -128,9 +131,13 @@ namespace Assets.Scripts.Presentation.Levels
             return entitiesList;
         }
 
-		public void LoadLevel(string levelName)
+		public void Init(string levelName, BattleManager battlemanager, GridNavigator gridNavigator)
 		{
-			var levelText = Resources.Load<TextAsset>($"Levels/{levelName}").text;
+            this.gridNavigator = gridNavigator;
+            this.battlemanager = battlemanager;
+            battlemanager.OnPlayerTurnEnded += OnPlayerTurnEnded;
+
+            var levelText = Resources.Load<TextAsset>($"Levels/{levelName}").text;
 			var rows = levelText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
 			var width = int.Parse(rows[0]);
 			var height = int.Parse(rows[1]);
@@ -165,27 +172,29 @@ namespace Assets.Scripts.Presentation.Levels
 
 				for (int x = 0; x < width; x++)
 				{
+                    Vector2Int gridPosition = new Vector2Int(x, y);
 					switch (row[x])
 					{
 						case 'e':
 							entitySprite = entitySprites[UnityEngine.Random.Range(0, 5)];
-							InstantiateEntity(x, y, entitySprite, EntityType.Character, EntityFaction.Enemy);
+							InstantiateEntity(gridPosition, entitySprite, EntityType.Character, EntityFaction.Enemy);
 							break;
 
 						case 'p':
 							entitySprite = entitySprites[UnityEngine.Random.Range(5, 10)];
-							InstantiateEntity(x, y, entitySprite, EntityType.Character, EntityFaction.Player);
+							InstantiateEntity(gridPosition, entitySprite, EntityType.Character, EntityFaction.Player);
 							break;
 
 						case '#':
 							entitySprite = tileSprites[49];
-							InstantiateEntity(x, y, entitySprite, EntityType.Obstacle, EntityFaction.Neutral);
+							InstantiateEntity(gridPosition, entitySprite, EntityType.Obstacle, EntityFaction.Neutral);
 							break;
 					}
 				}
 			}
 
-			CenterCamera(height);
+            gridNavigator.Init(this);
+            CenterCamera(height);
 		}
 
 		private void CenterCamera(int levelHeight)
@@ -212,21 +221,34 @@ namespace Assets.Scripts.Presentation.Levels
 			LevelData.Tiles[x, y] = tile.GetComponent<LevelTileComponent>();
 		}
 
-		private void InstantiateEntity(int x, int y, Sprite sprite, EntityType type, EntityFaction faction)
+		private void InstantiateEntity(Vector2Int gridPosition, Sprite sprite, EntityType type, EntityFaction faction)
 		{
             Entity newEntity = GameObject.Instantiate(entityPrefab, Vector3.zero, Quaternion.identity, entitiesContainer);
             newEntity.name = type.ToString();
-            newEntity.Init(x, y, sprite, type, faction, this);
+            newEntity.Init(gridPosition, gridNavigator, sprite, type, faction, this);
             if (type == EntityType.Character)
             {
                 newEntity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance, defaultCharacterAttackrange, stepDuration);
                 newEntity.OnMovementFinished += OnEntityMoved;
                 newEntity.OnDestroyed += OnEntityDestroyed;
                 newEntity.OnSelected += OnEntitySelected;
+                newEntity.OnAttack += OnEntityAttack;
             }
 			LevelData.Entities.Add(newEntity);
-            LevelData.TilesEntities[x, y] = newEntity;
+            LevelData.TilesEntities[gridPosition.x, gridPosition.y] = newEntity;
 		}
+
+        private void OnPlayerTurnEnded()
+        {
+            HideAllAttackTargetSelections();
+            HideAllBreadCrumbs();
+        }
+
+        private void OnEntityAttack()
+        {
+            HideAllBreadCrumbs();
+            HideAllAttackTargetSelections();
+        }
 
         private void OnEntitySelected(Entity selectedEntity, bool isSelected)
         {
@@ -235,11 +257,11 @@ namespace Assets.Scripts.Presentation.Levels
                 HideAllBreadCrumbs();
             }
 
-            foreach (var e in GetEntities())
+            foreach (var entity in GetEntities())
             {
-                if (e != selectedEntity)
+                if (entity != selectedEntity)
                 {
-                    e.EntityView.Deselect();
+                    entity.EntityView.Deselect();
                 }
             }
         }
@@ -248,6 +270,14 @@ namespace Assets.Scripts.Presentation.Levels
 		{
 			LevelData.Tiles[x, y].SetBreadCrumbVisible(isVisible, delay);
 		}
+
+        private void HideAllAttackTargetSelections()
+        {
+            foreach (var entity in GetEntities())
+            {
+                entity.EntityView.HideTargetVisuals();
+            }
+        }
 
 		public void HideAllBreadCrumbs()
 		{
@@ -329,6 +359,7 @@ namespace Assets.Scripts.Presentation.Levels
 
         private void OnEntityMoved(Entity entity, Vector2Int oldPosition, Vector2Int newPosition)
         {
+            HideAllBreadCrumbs();
             LevelData.TilesEntities[oldPosition.x, oldPosition.y] = null;
             LevelData.TilesEntities[newPosition.x, newPosition.y] = entity;
         }

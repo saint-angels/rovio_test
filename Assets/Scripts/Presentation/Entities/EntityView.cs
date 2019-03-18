@@ -26,7 +26,7 @@ namespace Assets.Scripts.Presentation.Entities
 			audio = GameObject.Find("Audio").GetComponent<AudioComponent>();
 		}
 
-        public void Init(Entity entityOwner, Sprite sprite, EntityType type, int x, int y, LevelService levelService)
+        public void Init(Entity entityOwner, Sprite sprite, EntityType type, Vector2Int gridPosition, LevelService levelService)
         {
             this.levelService = levelService;
             this.entityOwner = entityOwner;
@@ -37,7 +37,7 @@ namespace Assets.Scripts.Presentation.Entities
             entityOwner.OnTargeted += OnEntityTargeted;
             entityOwner.OnStep += OnEntityStep;
 
-            Renderer.sortingOrder = LevelGrid.GetSortingOrder(x, y);
+            Renderer.sortingOrder = LevelGrid.GetSortingOrder(gridPosition.x, gridPosition.y);
             Renderer.sprite = sprite;
             if (type == EntityType.Character)
             {
@@ -45,12 +45,17 @@ namespace Assets.Scripts.Presentation.Entities
                 HealthBar.SetActive(true);
                 HealthBar.transform.localScale = Vector3.one;
             }
-            transform.position = LevelGrid.ToWorldCoordinates(x, y);
+            transform.position = LevelGrid.ToWorldCoordinates(gridPosition);
         }
 
         public void Deselect()
         {
             OnEntitySelected(entityOwner, false);
+        }
+
+        public void HideTargetVisuals()
+        {
+            OnEntityTargeted(false);
         }
 
         private void OnEntityStep(Vector2Int to, int stepIndex, float stepDuration)

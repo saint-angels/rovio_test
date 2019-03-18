@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Presentation.Entities;
@@ -18,50 +19,38 @@ namespace Assets.Scripts
             ANIMATION_IN_PROGRESS,
         }
 
+        public Action OnPlayerTurnEnded = () => { };
+
 		private LevelService levelService;
 		private UIComponent ui;
-        private GridNavigator gridNavigator;
         private InputSystem inputSystem;
 
         private Entity selectedCharacter;
 
+        private TurnState turnState;
         private List<Entity> movablePlayerCharacters = new List<Entity>();
         private List<Entity> attackingPlayerCharacters = new List<Entity>();
-
-        private TurnState turnState;
 
         private void Start()
 		{
 			// Load the level
 			levelService = new LevelService();
-			levelService.LoadLevel("Level2");
+            GridNavigator gridNavigator = GetComponent<GridNavigator>() ?? gameObject.AddComponent<GridNavigator>();
+			levelService.Init("Level2", this, gridNavigator);
 
 			ui = GameObject.Find("Canvas").GetComponent<UIComponent>();
             ui.OnEndTurnClicked += OnEndTurnClicked;
-
-            gridNavigator = GetComponent<GridNavigator>() ?? gameObject.AddComponent<GridNavigator>();
-            gridNavigator.Init(levelService);
 
             inputSystem = GetComponent<InputSystem>() ?? gameObject.AddComponent<InputSystem>();
             inputSystem.Init(levelService);
             inputSystem.OnCharacterClicked += OnCharacterClicked;
             inputSystem.OnEmptyTileClicked += OnEmptyTileClicked;
-            inputSystem.OnOutOfBoundsClick += OnOutOfBoundsClick;
 
             StartPlayerTurn();
         }
 
         private void SetState(TurnState newTurnState)
         {
-            switch (newTurnState)
-            {
-                case TurnState.USER_IDLE:
-                    break;
-                case TurnState.USER_CHAR_SELECTED:
-                    break;
-                case TurnState.ANIMATION_IN_PROGRESS:
-                    break;
-            }
             turnState = newTurnState;
         }
 
@@ -83,39 +72,16 @@ namespace Assets.Scripts
             var enemies = levelService.GetCharacters(EntityFaction.Enemy);
             foreach (var enemy in enemies)
             {
-                bool attackSuccess = EntityTryAttackFractionInRange(enemy, EntityFaction.Player);
-                if (attackSuccess == false)
-                {
-                    Entity closestPlayerCharacter = levelService.GetClosestCharacter(enemy.GridPosition, EntityFaction.Player);
-                    if (closestPlayerCharacter != null)
-                    {
-                        List<Vector2Int> path = gridNavigator.GetPath(enemy, closestPlayerCharacter.GridPosition, enemy.MaxWalkDistance, closestPlayerCharacter);
-                        Vector2Int moveTarget = path.Last() == closestPlayerCharacter.GridPosition ? path[path.Count - 2] : path[path.Count - 1];
-                        IPromise movePromise = enemy.Move(gridNavigator, moveTarget);
-                        movePromise.Done(() => EntityTryAttackFractionInRange(enemy, EntityFaction.Player));
-                        enemyTurnPromises.Add(movePromise);
-                    }
-                }
+                enemyTurnPromises.Add(enemy.MakeAITurn());
             }
             CheckForGameOver();
 
             Deferred.All(enemyTurnPromises).Done(() => StartPlayerTurn());
         }
 
-        private bool EntityTryAttackFractionInRange(Entity attacker, EntityFaction enemyFaction)
-        {
-            List<Entity> entitiesInRange = levelService.GetEntitiesInRange(attacker, enemyFaction);
-            if (entitiesInRange.Count > 0)
-            {
-                entitiesInRange[0].Damage(attacker.AttackDamage);
-                return true;
-            }
-            return false;
-        }
-
         private void OnEndTurnClicked()
         {
-            DeselectCharacters();
+            OnPlayerTurnEnded();
             StartEnemyTurn();
         }
 
@@ -157,28 +123,18 @@ namespace Assets.Scripts
                     {
                         SetState(TurnState.ANIMATION_IN_PROGRESS);
                         var movingCharacter = selectedCharacter;
-                        DeselectCharacters();
-                        movingCharacter.Move(gridNavigator, gridPosition)
+
+                        movingCharacter.Move(gridPosition)
                             .Done(() =>
                             {
                                 movablePlayerCharacters.Remove(movingCharacter);
-                                SelectUserCharacter(movingCharacter);
+                                bool canAttack = attackingPlayerCharacters.Contains(movingCharacter);
+                                if (canAttack)
+                                {
+                                    SelectUserCharacter(movingCharacter);
+                                }
                             });
                     }
-                    else
-                    {
-                        DeselectCharacters();
-                    }
-                    break;
-            }
-        }
-
-        private void OnOutOfBoundsClick()
-        {
-            switch (turnState)
-            {
-                case TurnState.USER_CHAR_SELECTED:
-                    DeselectCharacters();
                     break;
             }
         }
@@ -217,31 +173,9 @@ namespace Assets.Scripts
 
             List<Vector2Int> possibleMoveTargets = new List<Vector2Int>();
             bool characterCanMove = movablePlayerCharacters.Contains(selectedCharacter);
-            if (characterCanMove)
-            {
-                gridNavigator.DoActionOnNeighbours(selectedCharacter.GridPosition, selectedCharacter.MaxWalkDistance, true,
-                    (depth, gridPosition) =>
-                    {
-                        possibleMoveTargets.Add(gridPosition);
-                    });
-            }
             bool characterCanAttack = attackingPlayerCharacters.Contains(selectedCharacter);
-
-            selectedCharacter.Select(possibleMoveTargets, characterCanAttack);
-
+            selectedCharacter.Select(characterCanMove, characterCanAttack);
             SetState(TurnState.USER_CHAR_SELECTED);
-        }
-
-        private void DeselectCharacters()
-        {
-            selectedCharacter = null;
-            foreach (var entity in levelService.GetEntities())
-            {
-                entity.SetSelected(false);
-                entity.SetTargeted(false);
-            }
-
-            SetState(TurnState.USER_IDLE);
         }
 	}
 }
