@@ -64,10 +64,8 @@ namespace Assets.Scripts
             SetState(TurnState.USER_IDLE);
         }
 
-        private void StartEnemyTurn()
+        private IPromise PlayEnemyTurn()
         {
-            SetState(TurnState.ANIMATION_IN_PROGRESS);
-
             List<IPromise> enemyTurnPromises = new List<IPromise>();
             var enemies = levelService.GetCharacters(EntityFaction.Enemy);
             foreach (var enemy in enemies)
@@ -76,13 +74,14 @@ namespace Assets.Scripts
             }
             CheckForGameOver();
 
-            Deferred.All(enemyTurnPromises).Done(() => StartPlayerTurn());
+            return Deferred.All(enemyTurnPromises);
         }
 
         private void OnEndTurnClicked()
         {
             OnPlayerTurnEnded();
-            StartEnemyTurn();
+            SetState(TurnState.ANIMATION_IN_PROGRESS);
+            PlayEnemyTurn().Done(() => StartPlayerTurn());
         }
 
         private void OnCharacterClicked(Entity clickedCharacter)

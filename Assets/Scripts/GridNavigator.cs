@@ -21,7 +21,6 @@ namespace Assets.Scripts
 
             blockManager = GetComponent<BlockManager>() ?? gameObject.AddComponent<BlockManager>();
 
-
             //Init graph
             var graph = AstarPath.active.data.pointGraph;
             graph.limits = new Vector3(LevelGrid.TileSize.x, LevelGrid.TileSize.y);
