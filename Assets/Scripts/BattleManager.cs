@@ -5,7 +5,6 @@ using Assets.Scripts.Presentation.Entities;
 using Assets.Scripts.Presentation.Levels;
 using Assets.Scripts.Promises;
 using Assets.Scripts.UI;
-using Pathfinding;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -16,13 +15,13 @@ namespace Assets.Scripts
         {
             USER_IDLE,
             USER_CHAR_SELECTED,
-            ANIMATION_IN_PROGRESS,
+            ACTION_IN_PROGRESS,
         }
 
         public Action OnPlayerTurnEnded = () => { };
 
 		private LevelService levelService;
-		private BattleHUD ui;
+		private BattleHUD hud;
         private InputSystem inputSystem;
 
         private Entity selectedCharacter;
@@ -38,8 +37,8 @@ namespace Assets.Scripts
             GridNavigator gridNavigator = GetComponent<GridNavigator>() ?? gameObject.AddComponent<GridNavigator>();
 			levelService.Init("Level2", this, gridNavigator);
 
-			ui = GameObject.Find("Canvas").GetComponent<BattleHUD>();
-            ui.OnEndTurnClicked += OnEndTurnClicked;
+			hud = GameObject.Find("Canvas").GetComponent<BattleHUD>();
+            hud.OnEndTurnClicked += OnEndTurnClicked;
 
             inputSystem = GetComponent<InputSystem>() ?? gameObject.AddComponent<InputSystem>();
             inputSystem.Init(levelService);
@@ -80,7 +79,7 @@ namespace Assets.Scripts
         private void OnEndTurnClicked()
         {
             OnPlayerTurnEnded();
-            SetState(TurnState.ANIMATION_IN_PROGRESS);
+            SetState(TurnState.ACTION_IN_PROGRESS);
             PlayEnemyTurn().Done(() => StartPlayerTurn());
         }
 
@@ -123,7 +122,7 @@ namespace Assets.Scripts
                 case TurnState.USER_CHAR_SELECTED:
                     if (selectedCharacter.CanMove(gridPosition))
                     {
-                        SetState(TurnState.ANIMATION_IN_PROGRESS);
+                        SetState(TurnState.ACTION_IN_PROGRESS);
                         var movingCharacter = selectedCharacter;
 
                         movingCharacter.Move(gridPosition)
@@ -148,11 +147,11 @@ namespace Assets.Scripts
 
             if (enemyCharacters.Count == 0)
             {
-                ui.ShowBattleResults(true);
+                hud.ShowBattleResults(true);
             }
             else if (playerCharacters.Count == 0)
             {
-                ui.ShowBattleResults(false);
+                hud.ShowBattleResults(false);
             }
         }
 
@@ -160,7 +159,6 @@ namespace Assets.Scripts
         {
             this.selectedCharacter = selectedCharacter;
 
-            List<Vector2Int> possibleMoveTargets = new List<Vector2Int>();
             bool movementAllowed = movablePlayerCharacters.Contains(selectedCharacter);
             bool attackAllowed = attackingPlayerCharacters.Contains(selectedCharacter);
             selectedCharacter.Select(movementAllowed, attackAllowed);
