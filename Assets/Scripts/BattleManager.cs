@@ -105,6 +105,11 @@ namespace Assets.Scripts
                             {
                                 attackingPlayerCharacters.Remove(selectedCharacter);
                                 selectedCharacter.Attack(clickedCharacter);
+                                bool canMove = movablePlayerCharacters.Contains(selectedCharacter);
+                                if (canMove)
+                                {
+                                    SelectUserCharacter(selectedCharacter);
+                                }
                                 CheckForGameOver();
                             }
                             break;

@@ -18,7 +18,7 @@ namespace Assets.Scripts.Presentation.Levels
 			return new Vector2(tileX, tileY);
 		}
 
-		public static Vector2Int ToGridCoordinates(float worldX, float worldY)
+		public static Vector2Int ToGridCoordinatesFloor(float worldX, float worldY)
 		{
 			worldY -= TileSize.y;
 			float tileX = (worldX / TileSize.x - worldY / TileSize.y) / 2f;
@@ -36,11 +36,10 @@ namespace Assets.Scripts.Presentation.Levels
 		{
 			var mousePosition = new Vector3(Input.mousePosition.x, Input.mousePosition.y, Camera.main.nearClipPlane);
 			var mousePositionInWorldSpace = Camera.main.ScreenToWorldPoint(mousePosition);
-			return ToGridCoordinatesOriginal(mousePositionInWorldSpace.x, mousePositionInWorldSpace.y);
+			return ToGridCoordinatesRound(mousePositionInWorldSpace.x, mousePositionInWorldSpace.y);
 		}
 
-        //TODO: Check why this is better for selection
-        public static Vector2Int ToGridCoordinatesOriginal(float worldX, float worldY)
+        public static Vector2Int ToGridCoordinatesRound(float worldX, float worldY)
         {
             worldY -= TileSize.y;
             var tileX = (worldX / TileSize.x - worldY / TileSize.y) / 2f;

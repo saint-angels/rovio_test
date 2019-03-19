@@ -48,7 +48,7 @@ namespace Assets.Scripts
             foreach (var node in graph.nodes)
             {
                 Vector3 nodeWorldPosition = (Vector3)node.position;
-                Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinates(nodeWorldPosition.x, nodeWorldPosition.y);
+                Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinatesFloor(nodeWorldPosition.x, nodeWorldPosition.y);
                 Entity entityAtNode = levelService.GetEntityAtPosition(nodeGridPosition.x, nodeGridPosition.y);
                 if (entityAtNode != null && entityAtNode.Type == EntityType.Obstacle)
                 {
@@ -87,7 +87,7 @@ namespace Assets.Scripts
                 for (int nodeIdx = 1; nodeIdx < path.vectorPath.Count && nodeIdx <= maxSteps; nodeIdx++)
                 {
                     Vector3 nodeWorldPosition = path.vectorPath[nodeIdx];
-                    Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinates(nodeWorldPosition.x, nodeWorldPosition.y);
+                    Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinatesFloor(nodeWorldPosition.x, nodeWorldPosition.y);
                     gridPath.Add(nodeGridPosition);
                 }
                 return gridPath;
@@ -127,7 +127,7 @@ namespace Assets.Scripts
                             visitedNodes[neighbour] = currentDepth;
                         }
                         Vector3 neighbourWorldPosition = (Vector3)neighbour.position;
-                        Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinates(neighbourWorldPosition.x, neighbourWorldPosition.y);
+                        Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinatesFloor(neighbourWorldPosition.x, neighbourWorldPosition.y);
                         Entity entityAtNode = levelService.GetEntityAtPosition(neigbourGridCoordinates.x, neigbourGridCoordinates.y);
                         bool nodeAcceptable = onlyEmptyNodes == false || entityAtNode == null;
                         if (nodeAcceptable)
