@@ -4,7 +4,7 @@ using System.Linq;
 using Assets.Scripts.Presentation.Entities;
 using Helpers;
 using Helpers.Promises;
-using Assets.Scripts.UI;
+using UI;
 using SharedData;
 using UnityEngine;
 

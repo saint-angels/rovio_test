@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-namespace Assets.Scripts.UI
+namespace UI
 {
 	public class BattleHUD : MonoBehaviour
 	{
