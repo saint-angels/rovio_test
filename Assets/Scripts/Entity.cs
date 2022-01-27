@@ -31,7 +31,7 @@ namespace Assets.Scripts
         public int AttackDamage { get; private set; }
         public int HealthPoints { get; private set; }
         public int AttackRange { get; private set; }
-    
+
         public List<Vector2Int> possibleMoveTargets = new List<Vector2Int>();
         public List<Entity> possibleAttackTargets = new List<Entity>();
 
@@ -88,9 +88,9 @@ namespace Assets.Scripts
         public IPromise Move(Vector2Int target)
         {
             List<Vector2Int> path = gridNavigator.GetPath(this, target, MaxWalkDistance);
+            Deferred moveDeferred = Deferred.GetFromPool();
             if (path != null)
             {
-                Deferred moveDeferred = Deferred.GetFromPool();
                 Vector2Int oldPosition = GridPosition;
 
                 for (int stepIdx = 0; stepIdx < path.Count; stepIdx++)
@@ -110,7 +110,7 @@ namespace Assets.Scripts
             }
             else
             {
-                return Deferred.GetFromPool().Resolve();
+                return moveDeferred.Resolve();
             }
         }
 
@@ -131,7 +131,7 @@ namespace Assets.Scripts
             if (attackAllowed)
             {
                 EntityFaction opposingFaction = Faction == EntityFaction.Player ? EntityFaction.Enemy : EntityFaction.Player;
-                List <Entity> entitiesInRange = levelService.GetEntitiesInRange(this, opposingFaction);
+                List<Entity> entitiesInRange = levelService.GetEntitiesInRange(this, opposingFaction);
                 foreach (Entity entity in entitiesInRange)
                 {
                     entity.SetTargeted(true);

@@ -9,8 +9,8 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-	public class BattleManager : MonoBehaviour
-	{
+    public class BattleManager : MonoBehaviour
+    {
         enum TurnState
         {
             USER_IDLE,
@@ -20,8 +20,8 @@ namespace Assets.Scripts
 
         public Action OnPlayerTurnEnded = () => { };
 
-		private LevelService levelService;
-		private BattleHUD hud;
+        private LevelService levelService;
+        private BattleHUD hud;
         private InputSystem inputSystem;
 
         private Entity selectedCharacter;
@@ -31,13 +31,13 @@ namespace Assets.Scripts
         private List<Entity> attackingPlayerCharacters = new List<Entity>();
 
         private void Start()
-		{
-			// Load the level
-			levelService = new LevelService();
+        {
+            // Load the level
+            levelService = new LevelService();
             GridNavigator gridNavigator = GetComponent<GridNavigator>() ?? gameObject.AddComponent<GridNavigator>();
-			levelService.Init("Level2", this, gridNavigator);
+            levelService.Init("Level2", this, gridNavigator);
 
-			hud = GameObject.Find("Canvas").GetComponent<BattleHUD>();
+            hud = GameObject.Find("Canvas").GetComponent<BattleHUD>();
             hud.OnEndTurnClicked += OnEndTurnClicked;
 
             inputSystem = GetComponent<InputSystem>() ?? gameObject.AddComponent<InputSystem>();
@@ -164,10 +164,11 @@ namespace Assets.Scripts
         {
             this.selectedCharacter = selectedCharacter;
 
+            //TODO: Let the entity itself contain the info if it can attack/move or not
             bool movementAllowed = movablePlayerCharacters.Contains(selectedCharacter);
             bool attackAllowed = attackingPlayerCharacters.Contains(selectedCharacter);
             selectedCharacter.Select(movementAllowed, attackAllowed);
             SetState(TurnState.USER_CHAR_SELECTED);
         }
-	}
+    }
 }
