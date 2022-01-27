@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Assets.Scripts.Promises
+namespace Helpers.Promises
 {
     public class Timers : MonoBehaviour, ITimers
     {

@@ -1,6 +1,6 @@
 ﻿using Assets.Scripts.Presentation.Entities;
 using Assets.Scripts.Presentation.Levels;
-using Assets.Scripts.Promises;
+using Helpers.Promises;
 using DG.Tweening;
 using SharedData;
 using System;

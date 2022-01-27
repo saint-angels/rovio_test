@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts.Presentation.Levels;
-using Assets.Scripts.Promises;
+using Helpers.Promises;
 using DG.Tweening;
 using SharedData;
 using UnityEngine;

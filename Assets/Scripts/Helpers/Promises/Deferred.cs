@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Assets.Scripts.Promises
+namespace Helpers.Promises
 {
     public class Deferred : BaseDeferred, IPromise
     {

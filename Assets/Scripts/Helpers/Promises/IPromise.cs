@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Assets.Scripts.Promises
+namespace Helpers.Promises
 {
     public interface IPromise
     {

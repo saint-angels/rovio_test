@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-namespace Assets.Scripts.Promises
+namespace Helpers.Promises
 {
     public abstract class BaseDeferred : IPromise
     {
