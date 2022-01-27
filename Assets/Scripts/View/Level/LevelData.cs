@@ -8,7 +8,7 @@ namespace Helpers
 	{
 		public int Width;
 		public int Height;
-		public LevelTileComponent[,] Tiles;
+		public TileView[,] Tiles;
 		public List<Entity> Entities;
         public Entity[,] TilesEntities;
     }

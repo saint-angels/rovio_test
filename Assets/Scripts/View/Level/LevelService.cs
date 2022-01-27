@@ -144,7 +144,7 @@ namespace Helpers
             {
                 Width = width,
                 Height = height,
-                Tiles = new LevelTileComponent[width, height],
+                Tiles = new TileView[width, height],
                 Entities = new List<Entity>(),
                 TilesEntities = new Entity[width, height]
             };
@@ -215,7 +215,7 @@ namespace Helpers
 
             tile.transform.localPosition = GridHelper.ToWorldCoordinates(x, y);
 
-            LevelData.Tiles[x, y] = tile.GetComponent<LevelTileComponent>();
+            LevelData.Tiles[x, y] = tile.GetComponent<TileView>();
         }
 
         private void InstantiateEntity(Vector2Int gridPosition, Sprite sprite, EntityType type, EntityFaction faction)

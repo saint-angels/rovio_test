@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Helpers
 {
-	public class LevelTileComponent : MonoBehaviour
+	public class TileView : MonoBehaviour
 	{
 		public GameObject BreadCrumb;
 
