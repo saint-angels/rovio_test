@@ -2,6 +2,7 @@
 using Assets.Scripts.Presentation.Levels;
 using Assets.Scripts.Promises;
 using DG.Tweening;
+using SharedData;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -51,13 +52,13 @@ namespace Assets.Scripts
             EntityView.Init(this, sprite, type, gridPosition, levelService);
         }
 
-        public void AddCharacterParams(int health, int attackDamge, int walkDistance, int attackRange, float stepDuration)
+        public void AddCharacterParams(CharacterConfig config, float stepDuration)
         {
-            this.AttackRange = attackRange;
-            this.AttackDamage = attackDamge;
-            this.maxHealth = health;
-            this.HealthPoints = health;
-            this.MaxWalkDistance = walkDistance;
+            this.AttackRange = config.attackRange;
+            this.AttackDamage = config.attackDamage;
+            this.maxHealth = config.maxHealth;
+            this.HealthPoints = config.maxHealth;
+            this.MaxWalkDistance = config.moveDistance;
             this.stepDuration = stepDuration;
         }
 

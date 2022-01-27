@@ -5,6 +5,7 @@ using Assets.Scripts.Presentation.Entities;
 using Assets.Scripts.Presentation.Levels;
 using Assets.Scripts.Promises;
 using Assets.Scripts.UI;
+using SharedData;
 using UnityEngine;
 
 namespace Assets.Scripts

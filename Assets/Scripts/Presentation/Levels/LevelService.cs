@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Assets.Scripts.Presentation.Entities;
 using DG.Tweening;
+using SharedData;
 using UnityEngine;
 
 namespace Assets.Scripts.Presentation.Levels
@@ -228,7 +228,9 @@ namespace Assets.Scripts.Presentation.Levels
             newEntity.Init(gridPosition, gridNavigator, sprite, type, faction, this);
             if (type == EntityType.Character)
             {
-                newEntity.AddCharacterParams(defaultCharacterHealth, defaultCharacterAttackDamage, defaultCharacterWalkDistance, defaultCharacterAttackrange, stepDuration);
+                string pathToConfig = "Configs/" + "DefaultCharacterConfig";
+                var config = Resources.Load<CharacterConfig>(pathToConfig);
+                newEntity.AddCharacterParams(config, stepDuration);
                 newEntity.OnMovementFinished += OnEntityMoved;
                 newEntity.OnDestroyed += OnEntityDestroyed;
                 newEntity.OnSelected += OnEntitySelected;

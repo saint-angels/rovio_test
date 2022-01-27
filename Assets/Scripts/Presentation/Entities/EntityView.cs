@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Assets.Scripts.Presentation.Levels;
 using Assets.Scripts.Promises;
 using DG.Tweening;
+using SharedData;
 using UnityEngine;
 
 namespace Assets.Scripts.Presentation.Entities

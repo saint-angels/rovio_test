@@ -1,6 +1,7 @@
 ﻿using Assets.Scripts.Presentation.Entities;
 using Assets.Scripts.Presentation.Levels;
 using Pathfinding;
+using SharedData;
 using System;
 using System.Collections;
 using System.Collections.Generic;

@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.Presentation.Entities;
 using Assets.Scripts.Presentation.Levels;
+using SharedData;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,7 +27,7 @@ namespace Assets.Scripts
             {
                 Vector2Int clickedCoordinates = LevelGrid.MouseToGridCoordinates();
                 //print("Clicked on " + clickedCoordinates);
-                
+
                 bool isPointOnLevelGrid = levelService.IsPointOnLevelGrid(clickedCoordinates.x, clickedCoordinates.y);
                 if (isPointOnLevelGrid)
                 {
