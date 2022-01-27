@@ -26,11 +26,6 @@ namespace Assets.Scripts.Presentation.Levels
         private float quakeAnimationCooldown;
         private AudioComponent audio;
 
-        private int defaultCharacterHealth = 2;
-        private int defaultCharacterAttackDamage = 1;
-        private int defaultCharacterWalkDistance = 6;
-        private int defaultCharacterAttackrange = 1;
-
         private BattleManager battlemanager;
         private GridNavigator gridNavigator;
 
