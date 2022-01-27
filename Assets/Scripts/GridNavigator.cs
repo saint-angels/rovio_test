@@ -1,5 +1,5 @@
 ﻿using Assets.Scripts.Presentation.Entities;
-using Assets.Scripts.Presentation.Levels;
+using Helpers;
 using Pathfinding;
 using SharedData;
 using System;
@@ -24,7 +24,7 @@ namespace Assets.Scripts
 
             //Init graph
             var graph = AstarPath.active.data.pointGraph;
-            graph.limits = new Vector3(LevelGrid.TileSize.x, LevelGrid.TileSize.y);
+            graph.limits = new Vector3(GridHelper.TileSize.x, GridHelper.TileSize.y);
             graph.Scan();
 
             foreach (var character in levelService.GetCharacters())
@@ -49,7 +49,7 @@ namespace Assets.Scripts
             foreach (var node in graph.nodes)
             {
                 Vector3 nodeWorldPosition = (Vector3)node.position;
-                Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinatesFloor(nodeWorldPosition.x, nodeWorldPosition.y);
+                Vector2Int nodeGridPosition = GridHelper.ToGridCoordinatesFloor(nodeWorldPosition.x, nodeWorldPosition.y);
                 Entity entityAtNode = levelService.GetEntityAtPosition(nodeGridPosition.x, nodeGridPosition.y);
                 if (entityAtNode != null && entityAtNode.Type == EntityType.Obstacle)
                 {
@@ -60,8 +60,8 @@ namespace Assets.Scripts
 
         public List<Vector2Int> GetPath(Entity entity, Vector2Int to, int maxSteps, Entity passableBlockingEntity = null)
         {
-            Vector2 fromWorldPosition = LevelGrid.ToWorldCoordinates(entity.GridPosition);
-            Vector2 toWorldPosition = LevelGrid.ToWorldCoordinates(to);
+            Vector2 fromWorldPosition = GridHelper.ToWorldCoordinates(entity.GridPosition);
+            Vector2 toWorldPosition = GridHelper.ToWorldCoordinates(to);
 
             var path = ABPath.Construct(fromWorldPosition, toWorldPosition, null);
 
@@ -88,7 +88,7 @@ namespace Assets.Scripts
                 for (int nodeIdx = 1; nodeIdx < path.vectorPath.Count && nodeIdx <= maxSteps; nodeIdx++)
                 {
                     Vector3 nodeWorldPosition = path.vectorPath[nodeIdx];
-                    Vector2Int nodeGridPosition = LevelGrid.ToGridCoordinatesFloor(nodeWorldPosition.x, nodeWorldPosition.y);
+                    Vector2Int nodeGridPosition = GridHelper.ToGridCoordinatesFloor(nodeWorldPosition.x, nodeWorldPosition.y);
                     gridPath.Add(nodeGridPosition);
                 }
                 return gridPath;
@@ -97,7 +97,7 @@ namespace Assets.Scripts
 
         public void DoActionOnNeighbours(Vector2Int nodeGridPosition, int maxDepth, bool onlyEmpty, Action<int, Vector2Int> action)
         {
-            Vector3 nodePositionWorld = LevelGrid.ToWorldCoordinates(nodeGridPosition);
+            Vector3 nodePositionWorld = GridHelper.ToWorldCoordinates(nodeGridPosition);
             GraphNode selectedNode = AstarPath.active.data.pointGraph.GetNearest(nodePositionWorld).node;
             if (selectedNode == null)
             {
@@ -128,7 +128,7 @@ namespace Assets.Scripts
                             visitedNodes[neighbour] = currentDepth;
                         }
                         Vector3 neighbourWorldPosition = (Vector3)neighbour.position;
-                        Vector2Int neigbourGridCoordinates = LevelGrid.ToGridCoordinatesFloor(neighbourWorldPosition.x, neighbourWorldPosition.y);
+                        Vector2Int neigbourGridCoordinates = GridHelper.ToGridCoordinatesFloor(neighbourWorldPosition.x, neighbourWorldPosition.y);
                         Entity entityAtNode = levelService.GetEntityAtPosition(neigbourGridCoordinates.x, neigbourGridCoordinates.y);
                         bool nodeAcceptable = onlyEmptyNodes == false || entityAtNode == null;
                         if (nodeAcceptable)

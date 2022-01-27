@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using Assets.Scripts;
 using Assets.Scripts.Presentation.Entities;
 
-namespace Assets.Scripts.Presentation.Levels
+namespace Helpers
 {
 	public class LevelData
 	{

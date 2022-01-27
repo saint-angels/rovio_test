@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 
-namespace Assets.Scripts.Presentation.Levels
+namespace Helpers
 {
-	public static class LevelGrid
+	public static class GridHelper
 	{
 		public static readonly Vector2 TileSize = new Vector2(0.5f, 0.25f);
 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Presentation.Entities;
-using Assets.Scripts.Presentation.Levels;
+using Helpers;
 using Helpers.Promises;
 using Assets.Scripts.UI;
 using SharedData;

@@ -1,7 +1,7 @@
 ﻿using DG.Tweening;
 using UnityEngine;
 
-namespace Assets.Scripts.Presentation.Levels
+namespace Helpers
 {
 	public class LevelTileComponent : MonoBehaviour
 	{

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Assets.Scripts.Presentation.Levels;
+using Helpers;
 using Helpers.Promises;
 using DG.Tweening;
 using SharedData;
@@ -38,7 +38,7 @@ namespace Assets.Scripts.Presentation.Entities
             entityOwner.OnTargeted += OnEntityTargeted;
             entityOwner.OnStep += OnEntityStep;
 
-            Renderer.sortingOrder = LevelGrid.GetSortingOrder(gridPosition.x, gridPosition.y);
+            Renderer.sortingOrder = GridHelper.GetSortingOrder(gridPosition.x, gridPosition.y);
             Renderer.sprite = sprite;
             if (type == EntityType.Character)
             {
@@ -46,7 +46,7 @@ namespace Assets.Scripts.Presentation.Entities
                 HealthBar.SetActive(true);
                 HealthBar.transform.localScale = Vector3.one;
             }
-            transform.position = LevelGrid.ToWorldCoordinates(gridPosition);
+            transform.position = GridHelper.ToWorldCoordinates(gridPosition);
         }
 
         public void Deselect()
@@ -61,13 +61,13 @@ namespace Assets.Scripts.Presentation.Entities
 
         private void OnEntityStep(Vector2Int to, int stepIndex, float stepDuration)
         {
-            Vector2 toPositionWorld = LevelGrid.ToWorldCoordinates(to.x, to.y);
+            Vector2 toPositionWorld = GridHelper.ToWorldCoordinates(to.x, to.y);
 
             transform.DOJump(toPositionWorld, 0.25f, 1, stepDuration).SetEase(Ease.InQuint)
                     .SetDelay(stepDuration * stepIndex)
                     .OnComplete(() =>
                     {
-                        Renderer.sortingOrder = LevelGrid.GetSortingOrder(to.x, to.y);
+                        Renderer.sortingOrder = GridHelper.GetSortingOrder(to.x, to.y);
                         audio.PlayMove();
                     });
         }
@@ -145,7 +145,7 @@ namespace Assets.Scripts.Presentation.Entities
         {
             var slash = GameObject.Instantiate(SlashPrefab, Vector3.zero, Quaternion.identity);
             slash.name = SlashPrefab.name;
-            slash.transform.position = LevelGrid.ToWorldCoordinates(x, y);
+            slash.transform.position = GridHelper.ToWorldCoordinates(x, y);
             slash.transform.GetChild(0).rotation = Quaternion.Euler(0, 0, UnityEngine.Random.Range(0, 360));
             GameObject.Destroy(slash, 1f);
         }

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Assets.Scripts;
+using Assets.Scripts.Presentation;
 using DG.Tweening;
 using SharedData;
 using UnityEngine;
 
-namespace Assets.Scripts.Presentation.Levels
+namespace Helpers
 {
     public class LevelService
     {
@@ -206,12 +208,12 @@ namespace Assets.Scripts.Presentation.Levels
         {
             var tile = GameObject.Instantiate(tilePrefab, Vector3.zero, Quaternion.identity, tilesContainer);
             var renderer = tile.GetComponent<SpriteRenderer>();
-            renderer.sortingOrder = LevelGrid.GetSortingOrder(x, y);
+            renderer.sortingOrder = GridHelper.GetSortingOrder(x, y);
             renderer.sprite = tileSprites[index];
             renderer.color = (x ^ y) % 2 == 0 ? Color.white : new Color(0.95f, 0.95f, 0.95f);
             tile.name = $"Tile{x}_{y}";
 
-            tile.transform.localPosition = LevelGrid.ToWorldCoordinates(x, y);
+            tile.transform.localPosition = GridHelper.ToWorldCoordinates(x, y);
 
             LevelData.Tiles[x, y] = tile.GetComponent<LevelTileComponent>();
         }
